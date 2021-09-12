@@ -1,0 +1,26 @@
+{
+    "name": "mmobrowser",
+    "description" : "mmobrowser",
+    "version": "0.0.1",
+    "manifest_version": 2,
+    "permissions": ["tabs","storage"],    
+    "browser_action": {
+      "default_icon": {
+        "16": "img/mmob_icon.png"
+      },
+      "default_popup": "src/config.html"
+    },
+    "content_scripts":[
+        {
+            "matches":[
+                "http://192.168.10.112:8080/"
+            ],
+            "js":["src/jquery-3.6.0.min.js","src/main.js"]
+        }
+    ],
+    "background":{
+        "scripts":["src/socket.io.js","src/background.js"],
+        "persistent": true
+    },
+    "web_accessible_resources":["img/mmob_icon_old.png"]
+  }

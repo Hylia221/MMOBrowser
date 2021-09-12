@@ -1,5 +1,3 @@
-# MMOB
-## MMOBとは
-MMOB(Massively Multiplayer Online　Browser)とは、多人数大人数が一度に同じWebサイトを閲覧できるようにするChrome拡張機能です。
-
+# MMOBrowser
+MMOBrowser(Massively Multiplayer Online Browser)とは、大規模多人数が同時にWebサイトを閲覧できるようにするChrome拡張機能です。
 

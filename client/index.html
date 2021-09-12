@@ -1,0 +1,37 @@
+<html>
+<body>
+    <div class="container">
+ 
+        <form name="myform">
+            <input name="text" type="text">
+            <button name="btn">送信</button>
+        </form>
+     
+        <hr>
+     
+        <ul id="message"></ul>
+     
+    </div>
+</body>
+<script>
+import socket from "./socket";
+
+var message = document.getElementById('message');
+var form = document.forms.myform;
+
+form.btn.addEventListener('click', function(e) {
+    e.preventDefault();
+ 
+    socket.emit('chat', form.text.value);
+    form.text.value = '';
+})
+
+socket.on('chat', function(msg){
+    var li = document.createElement('li');
+ 
+    li.textContent = msg;
+    message.appendChild(li);
+});
+
+</script>
+</html>
