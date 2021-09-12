@@ -13,7 +13,8 @@
     "content_scripts":[
         {
             "matches":[
-                "http://192.168.10.112:8080/"
+                "http://192.168.10.112:8080/",
+                "https://ja.wikipedia.org/wiki/*"
             ],
             "js":["src/jquery-3.6.0.min.js","src/main.js"]
         }

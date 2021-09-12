@@ -48,15 +48,15 @@ chrome.runtime.onMessage.addListener(
         ui = request.userInfo[id];
         if($('#mmobcursor_'+id).length){
           $('#mmobcursor_'+id).css({
-            "top":ui.y,
-            "left":ui.x,
+            "top":ui.y + 20,
+            "left":ui.x + 20,
           });
         }else{
           $('body').append('<img src="'+chrome.runtime.getURL("./img/mmob_icon_old.png")+'" id="mmobcursor_'+id+'" class="mmobcursor">');
           $('#mmobcursor_'+id).css({
             "position": "absolute",
-            "top":ui.y,
-            "left":ui.x,
+            "top":ui.y + 20,
+            "left":ui.x + 20,
           });
         }
       }
