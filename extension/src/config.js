@@ -45,8 +45,7 @@ function viewLoginWindow(){
                 }
             });
         });
-    });
-    
+    });   
 }
 
 function hideLoginWindow(){
