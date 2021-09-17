@@ -1,5 +1,5 @@
-async function sha256(text){
-    const uint8  = new TextEncoder().encode(text)
-    const digest = await crypto.subtle.digest('SHA-256', uint8)
-    return Array.from(new Uint8Array(digest)).map(v => v.toString(16).padStart(2,'0')).join('')
+async function sha256(str) {
+    const buff = new Uint8Array([].map.call(str, (c) => c.charCodeAt(0))).buffer;
+    const digest = await crypto.subtle.digest('SHA-256', buff);
+    return [].map.call(new Uint8Array(digest), x => ('00' + x.toString(16)).slice(-2)).join('');
 }
