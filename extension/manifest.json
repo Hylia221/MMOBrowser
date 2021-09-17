@@ -20,7 +20,7 @@
         }
     ],
     "background":{
-        "scripts":["src/socket.io.js","src/background.js"],
+        "scripts":["src/socket.io.js","src/sha256.js","src/background.js"],
         "persistent": true
     },
     "web_accessible_resources":["img/mmob_icon_old.png"]

@@ -27,12 +27,21 @@ chrome.runtime.onMessage.addListener(
         chrome.storage.sync.set({isConnected: false});
         sendResponse({});
       }else if (request.type == "mouseMoved"){
+        // const hashedUrl = sha256(sender.tab.url);
+        // const myInfo = {
+        //   name:username,
+        //   url:hashedUrl,
+        //   x:request.my_x,
+        //   y:request.my_y,
+        // }
+                // const hashedUrl = sha256();
         const myInfo = {
           name:username,
           url:sender.tab.url,
           x:request.my_x,
           y:request.my_y,
         }
+
         // console.log(myInfo);
         socket.emit('mouseMoved',myInfo);
         sendResponse({message: "thankyou"});
@@ -40,11 +49,11 @@ chrome.runtime.onMessage.addListener(
     });
 
 setInterval(() => {
-  chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-    // socket.emit('requestUserInfo', {url:tabs[0].url});
-    socket.emit('requestUserInfo', {url:"test_url"});
+  chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
+    socket.emit('requestUserInfo', {url:tabs[0].url});
+    // socket.emit('requestUserInfo', {url:"test_url"});
   });
-}, 50);
+}, 200);
 
 socket.on("responseUserInfo", (USER_INFO) => {
   chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
@@ -55,3 +64,7 @@ socket.on("responseUserInfo", (USER_INFO) => {
       );
   });
 });
+
+chrome.windows.onRemoved.addListener(function(windowid) {
+  chrome.storage.sync.set({isConnected:false});
+ });
