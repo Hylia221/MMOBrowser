@@ -2,13 +2,19 @@ const URL = "http://192.168.10.112:3000";
 const socket = io(URL,{autoConnect: false, transports: ['websocket', 'polling', 'flashsocket'] });
 var username = "";
 
-// load a state of connection
 chrome.storage.sync.get('isConnected', function(data) {
   if (typeof data.isConnected === 'undefined') {
-    console.log("set isConnected = false for the first time.")
+    // console.log("set isConnected = false for the first time.")
     chrome.storage.sync.set({isConnected: false});
   }
 });
+
+chrome.storage.sync.get('isChatWindowShown', function(data) {
+  if (typeof data.isChatWindowShown === 'undefined') {
+    chrome.storage.sync.set({isChatWindowShown: true});
+  }
+});
+
 
 chrome.runtime.onMessage.addListener(
     async function(request, sender, sendResponse) { 
@@ -20,61 +26,65 @@ chrome.runtime.onMessage.addListener(
         chrome.storage.sync.set({isConnected: true});
         sendResponse({});
       }else if(request.type == "logout"){
-        if (typeof socket.disconnect() === 'undefined') {
+        // if (typeof socket.disconnect() === 'undefined') {
+        //   socket.disconnect();
+        // }
+        if(socket.connected){
           socket.disconnect();
         }
-        console.log("logout!");
         chrome.storage.sync.set({isConnected: false});
+        console.log("logout!");
         sendResponse({});
       }else if (request.type == "updateUserInfo"){
+        if(socket.connected){
           const hashedUrl = await sha256(sender.tab.url);
           console.log(hashedUrl);
           const myInfo = {
-          name:username,
-          url:hashedUrl,
-          x:request.my_x,
-          y:request.my_y,
+            name:username,
+            url:hashedUrl,
+            x:request.my_x,
+            y:request.my_y,
+          }
+          socket.emit('updateUserInfo',myInfo);
         }
-        socket.emit('updateUserInfo',myInfo);
-        sendResponse({message: "thankyou"});
-        
-        // const hashedUrl = await sha256(sender.tab.url);
-        // console.log(hashedUrl);
-        // const myInfo = {
-        //   name:username,
-        //   url:hashedUrl,
-        //   x:request.my_x,
-        //   y:request.my_y,
-        // }
-
-        // socket.emit('updateUserInfo',myInfo);
-        // sendResponse({message: "thankyou"});
+        sendResponse({});
+      }else if (request.type == "sendMessage"){
+        if(socket.connected){
+          socket.emit('sendMessage',{"message":request.message});
+        }
+        sendResponse({});
       }
+      return true;
     });
 
 setInterval(() => {
-  chrome.tabs.query({active: true, lastFocusedWindow: true}, async (tabs) => {
-    // const hashedUrl = await sha256(sender.tab.url);
-    const hashedUrl = await sha256(tabs[0].url);
-    socket.emit('requestUserInfo', {url:hashedUrl});
-    // const hashedUrl = await sha256(tabs[0].url);
-    // sha256(tabs[0].url).then((hashedUrl)=>{
-    // socket.emit('requestUserInfo', {url:hashedUrl});
-    // });
-    // socket.emit('requestUserInfo', {url:tabs[0].url});
-    // socket.emit('requestUserInfo', {url:"test_url"});
-  });
+  // chrome.tabs.query({active: true, lastFocusedWindow: true}, async (tabs) => {
+  //   const hashedUrl = await sha256(tabs[0].url);
+  //   socket.emit('requestUserInfo', {url:hashedUrl});
+  // });
+  if(socket.connected){
+    socket.emit('requestUserInfo', {});
+  }
 }, 50);
 
 socket.on("responseUserInfo", (USER_INFO) => {
   chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
-    console.log("tabs[0].id="+tabs[0].id);
     chrome.tabs.sendMessage(
       tabs[0].id, 
       {type:"updateUserInfo", "myId":socket.id, userInfo:USER_INFO},
       );
   });
 });
+
+socket.on("receiveMessage", (response) => {
+  chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
+    chrome.tabs.sendMessage(
+      tabs[0].id, 
+      {"type":"receiveMessage", "id":response.id, "username":response.username, "message":response.message},
+      );
+  });
+});
+
 
 chrome.windows.onRemoved.addListener(function(windowid) {
   chrome.storage.sync.set({isConnected:false});

@@ -20,33 +20,28 @@ io.use((socket, next) => {
 
 io.on("connection",(socket) =>{
   var username = socket.username;
-  // var url =   socket.url;
-  // const url = sha256(socket.url);
-  // console.log(username+"("+socket.id+") connected.");
-  // socket.join(url);
-  // console.log(username+"("+socket.id+") joined room "+url);
+  var room = "";
   USER_INFO_DB[socket.id] = {name:username, url:"", x:0, y:0};
 
   socket.on('updateUserInfo', function(userInfo){
-    const hashedUrl = userInfo.url;
-    console.log("id:"+socket.id+", name:"+userInfo.name+", url:"+hashedUrl+", x:"+userInfo.x+", y:"+userInfo.y);
-    if(USER_INFO_DB[socket.id].url != hashedUrl){
+    room = userInfo.url;
+    console.log("id:"+socket.id+", name:"+userInfo.name+", url:"+room+", x:"+userInfo.x+", y:"+userInfo.y);
+    if(USER_INFO_DB[socket.id].url != room){
       if(USER_INFO_DB[socket.id].url != ""){
         socket.leave(USER_INFO_DB[socket.id].url);
       }
-      socket.join(hashedUrl);
-      console.log(username+"("+socket.id+") changed room from "+USER_INFO_DB[socket.id].url+" to "+hashedUrl);
+      socket.join(room);
+      console.log(username+"("+socket.id+") changed room from "+USER_INFO_DB[socket.id].url+" to "+room);
     }
-    USER_INFO_DB[socket.id] = {name:userInfo.name, url:hashedUrl, x:userInfo.x, y:userInfo.y};
+    USER_INFO_DB[socket.id] = {name:userInfo.name, url:room, x:userInfo.x, y:userInfo.y};
   }); 
 
-  socket.on('requestUserInfo', function(url){
-    const hashedUrl = url.url;
+  socket.on('requestUserInfo', function(request){
     const rooms = io.of("/").adapter.rooms;
     var clientIds;
-    for(room of rooms){
-      if(room[0] == hashedUrl){
-        clientIds = room[1];
+    for(r of rooms){
+      if(r[0] == room){
+        clientIds = r[1];
       }
     }
 
@@ -57,9 +52,14 @@ io.on("connection",(socket) =>{
     for(const clientId of clientIds){
       userInfoInRoom[clientId]=USER_INFO_DB[clientId];
     }
-    io.to(hashedUrl).emit("responseUserInfo",userInfoInRoom);
+    io.to(room).emit("responseUserInfo",userInfoInRoom);
   });
   
+  socket.on('sendMessage', function(request){
+    console.log(request.message);
+    io.to(room).emit("receiveMessage",{"id":socket.id,"username":username,"message":request.message});
+  });
+
   socket.on("disconnect", () => {
     const username = socket.username;
     // const url = sha256(socket.url)
