@@ -14,6 +14,7 @@ const chatFrame = jsFrame.create({
     resizable: true,//マウスでリサイズ可能
     html:mmobChatWindowInnerHTML
 });
+
 chatFrame.on('#mmob-send-button', 'click', ()=>{
   const myMessage = $("#mmob-my-message").val();
   if(myMessage != null && myMessage != '' ){
@@ -136,9 +137,16 @@ chrome.runtime.onMessage.addListener(
         $('#mmobspeech-balloon-'+ request.id).hide();
       }, 5000);
       sendResponse({});
+    }else if(request.type == "logout"){
+      $(".mmobplayer").remove();
+      chatFrame.hide();
+      chrome.storage.sync.set({isChatWindowShown: false});
+      sendResponse({});
     }
     return true;
   });
+
+  
 // $('body').append(
 //   `
 //     <table class="table">

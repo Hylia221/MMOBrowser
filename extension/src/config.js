@@ -59,7 +59,6 @@ function showMainWindow(){
     </form>
     `); 
     $('#logoutButton').on('click', function() {
-        console.log("click logoutButton")
         chrome.runtime.sendMessage({type:"logout"}, function(response) {
             chrome.storage.sync.get('isConnected', function(data) {
                 if(data.isConnected){
@@ -67,7 +66,13 @@ function showMainWindow(){
                     console.log("logout failed.")
                 }else{
                     hideMainWindow();
-                    viewLoginWindow();
+                    viewLoginWindow();                    
+                    // chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
+                    //     chrome.tabs.sendMessage(
+                    //         tabs[0].id, 
+                    //         {"type":"logout"},
+                    //     );
+                    // });              
                 }
             });
         });

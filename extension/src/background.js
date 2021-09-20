@@ -1,20 +1,25 @@
 const URL = "http://192.168.10.112:3000";
 const socket = io(URL,{autoConnect: false, transports: ['websocket', 'polling', 'flashsocket'] });
 var username = "";
+var requestUserInfoIntervalFunc;
 
-chrome.storage.sync.get('isConnected', function(data) {
-  if (typeof data.isConnected === 'undefined') {
-    // console.log("set isConnected = false for the first time.")
-    chrome.storage.sync.set({isConnected: false});
-  }
-});
+function initMMOB(){
+  chrome.storage.sync.set({isConnected: false});
+  chrome.storage.sync.set({isChatWindowShown: true});
+  // chrome.storage.sync.get('isConnected', function(data) {
+  //   if (typeof data.isConnected === 'undefined') {
+  //     // console.log("set isConnected = false for the first time.")
+  //     chrome.storage.sync.set({isConnected: false});
+  //   }
+  // });
+  // chrome.storage.sync.get('isChatWindowShown', function(data) {
+  //   if (typeof data.isChatWindowShown === 'undefined') {
+  //     chrome.storage.sync.set({isChatWindowShown: true});
+  //   }
+  // });
+}
 
-chrome.storage.sync.get('isChatWindowShown', function(data) {
-  if (typeof data.isChatWindowShown === 'undefined') {
-    chrome.storage.sync.set({isChatWindowShown: true});
-  }
-});
-
+initMMOB();
 
 chrome.runtime.onMessage.addListener(
     async function(request, sender, sendResponse) { 
@@ -22,17 +27,28 @@ chrome.runtime.onMessage.addListener(
         username = request.username;
         socket.auth = { username };
         socket.connect();
-        console.log("login!");
+        requestUserInfoIntervalFunc = setInterval(() => {
+          if(socket.connected){
+            socket.emit('requestUserInfo', {});
+          }
+        }, 50);
         chrome.storage.sync.set({isConnected: true});
+        console.log("login!");
         sendResponse({});
       }else if(request.type == "logout"){
-        // if (typeof socket.disconnect() === 'undefined') {
-        //   socket.disconnect();
-        // }
         if(socket.connected){
           socket.disconnect();
         }
         chrome.storage.sync.set({isConnected: false});
+        chrome.tabs.query({}, tabs => {
+          for(let i=0; i<tabs.length; i++){
+            chrome.tabs.sendMessage(
+              tabs[i].id, 
+              {"type":"logout"},
+            );
+          }
+        });
+        clearInterval(requestUserInfoIntervalFunc);
         console.log("logout!");
         sendResponse({});
       }else if (request.type == "updateUserInfo"){
@@ -57,16 +73,6 @@ chrome.runtime.onMessage.addListener(
       return true;
     });
 
-setInterval(() => {
-  // chrome.tabs.query({active: true, lastFocusedWindow: true}, async (tabs) => {
-  //   const hashedUrl = await sha256(tabs[0].url);
-  //   socket.emit('requestUserInfo', {url:hashedUrl});
-  // });
-  if(socket.connected){
-    socket.emit('requestUserInfo', {});
-  }
-}, 50);
-
 socket.on("responseUserInfo", (USER_INFO) => {
   chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
     chrome.tabs.sendMessage(
@@ -85,10 +91,9 @@ socket.on("receiveMessage", (response) => {
   });
 });
 
-
-chrome.windows.onRemoved.addListener(function(windowid) {
-  chrome.storage.sync.set({isConnected:false});
- });
+// chrome.windows.onRemoved.addListener(function(windowid) {
+//   chrome.storage.sync.set({isConnected:false});
+//  });
 
 //  // On tab updated
 // chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
