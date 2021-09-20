@@ -90,19 +90,19 @@ chrome.runtime.onMessage.addListener(
         if ($('#mmobplayer-' + id).length) {
           // 更新
           $('#mmobplayer-' + id).css({
-            "top": ui.y + (request.myId == id ? 20:0),
-            "left": ui.x + (request.myId == id ? 20:0),
+            "top": ui.y + (request.myUserID == id ? 20:0),
+            "left": ui.x + (request.myUserID == id ? 20:0),
           });
         } else {
           // 初回描写
           $('body').append('<div id="mmobplayer-'+id+'" class="mmobplayer"></div>');
           $('#mmobplayer-'+id).append('<img src="' + chrome.runtime.getURL("./img/cursor1.gif") + '" id="mmobcursor-' + id + '" class="mmobcursor"/>');
-          $('#mmobplayer-'+id).append('<span id="mmobname-box-' + id + '" class="mmobname-box">'+ui.name+'</span>');
+          $('#mmobplayer-'+id).append('<span id="mmobname-box-' + id + '" class="mmobname-box">'+ui.username+'</span>');
           $('#mmobplayer-'+id).append('<div id="mmobspeech-balloon-' + id + '" class="mmobspeech-balloon"></div>');
           $('#mmobplayer-' + id).css({
             "position": "absolute",
-            "top": ui.y + (request.myId == id ? 20:0),
-            "left": ui.x + (request.myId == id ? 20:0),
+            "top": ui.y + (request.myUserID == id ? 20:0),
+            "left": ui.x + (request.myUserID == id ? 20:0),
           });
 
           $('#mmobcursor-' + id).css({
@@ -130,11 +130,11 @@ chrome.runtime.onMessage.addListener(
     }else if(request.type == "receiveMessage"){
       const msg = request.username +":"+request.message;
       $("#mmob-messages").append('<li>'+msg+'</li>');
-      console.log(request.id);
-      $('#mmobspeech-balloon-'+ request.id).text(request.message);
-      $('#mmobspeech-balloon-'+ request.id).show();
+      console.log(request.userID);
+      $('#mmobspeech-balloon-'+ request.userID).text(request.message);
+      $('#mmobspeech-balloon-'+ request.userID).show();
       setTimeout(()=>{
-        $('#mmobspeech-balloon-'+ request.id).hide();
+        $('#mmobspeech-balloon-'+ request.userID).hide();
       }, 5000);
       sendResponse({});
     }else if(request.type == "logout"){

@@ -53,13 +53,13 @@ chrome.runtime.onMessage.addListener(
         sendResponse({});
       }else if (request.type == "updateUserInfo"){
         if(socket.connected){
-          const hashedUrl = await sha256(sender.tab.url);
-          console.log(hashedUrl);
+          const deletedParamsUrl = sender.tab.url.replace(/\?.*$/,"");
+          const location = await sha256(deletedParamsUrl);
           const myInfo = {
-            name:username,
-            url:hashedUrl,
-            x:request.my_x,
-            y:request.my_y,
+            "username":username,
+            "location":location,
+            "x":request.my_x,
+            "y":request.my_y,
           }
           socket.emit('updateUserInfo',myInfo);
         }
@@ -71,13 +71,20 @@ chrome.runtime.onMessage.addListener(
         sendResponse({});
       }
       return true;
-    });
+    }
+);
+
+socket.on("session", ({ sessionID, userID }) => {
+  socket.auth = { sessionID };
+  // localStorage.setItem("sessionID", sessionID);
+  socket.userID = userID;
+});
 
 socket.on("responseUserInfo", (USER_INFO) => {
   chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
     chrome.tabs.sendMessage(
       tabs[0].id, 
-      {type:"updateUserInfo", "myId":socket.id, userInfo:USER_INFO},
+      {type:"updateUserInfo", "myUserID":socket.userID, userInfo:USER_INFO},
       );
   });
 });
@@ -86,7 +93,7 @@ socket.on("receiveMessage", (response) => {
   chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
     chrome.tabs.sendMessage(
       tabs[0].id, 
-      {"type":"receiveMessage", "id":response.id, "username":response.username, "message":response.message},
+      {"type":"receiveMessage", "userID":response.userID, "username":response.username, "message":response.message},
       );
   });
 });

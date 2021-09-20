@@ -6,11 +6,11 @@ MMOBrowser(Massively Multiplayer Online Browser)とは、大規模多人数が�
 - チャット欄をマウスでしまえるようにする
 - チャット欄をマウスで消せるようにする
 - チャット欄の位置を記憶する
-- UserIDとSessionIDを分割する
 - 次回以降自動ログインを実装する
 - 自分のマウスカーソルを非表示にする
-
 - ページを変えたときのみURLを送信
 
 ## 実装済み
 - chromeを閉じたときにログアウトする
+- UserIDとSessionIDを分割する
+- URLのパラメータを消す

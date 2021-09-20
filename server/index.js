@@ -1,11 +1,7 @@
 const crypto = require('crypto');
-
 const httpServer = require('http').createServer();
 const io = require('socket.io')(httpServer);
-
-// function sha256(str){
-//   return String(crypto.createHash('sha256').update(str, 'utf8').digest('hex'));
-// }
+const randomID = () => crypto.randomBytes(8).toString("hex");
 
 var USER_INFO_DB={};
 io.use((socket, next) => {
@@ -13,27 +9,34 @@ io.use((socket, next) => {
   if (!username) {
     return next(new Error("invalid username"));
   }
+  socket.sessionID = socket.id;
+  socket.userID = randomID();
   socket.username = username;
-  // socket.url = socket.handshake.url;
   next();
 });
 
 io.on("connection",(socket) =>{
-  var username = socket.username;
+  // var username = socket.username;
+  // var 
   var room = "";
-  USER_INFO_DB[socket.id] = {name:username, url:"", x:0, y:0};
+  USER_INFO_DB[socket.sessionID] = {"userID":socket.userID, "username":socket.username, "location":"", x:0, y:0};
+  console.log(socket.userID+"("+socket.username+") connected!");
+  socket.emit("session", {
+    sessionID: socket.sessionID,
+    userID: socket.userID,
+  });
 
   socket.on('updateUserInfo', function(userInfo){
-    room = userInfo.url;
-    console.log("id:"+socket.id+", name:"+userInfo.name+", url:"+room+", x:"+userInfo.x+", y:"+userInfo.y);
-    if(USER_INFO_DB[socket.id].url != room){
-      if(USER_INFO_DB[socket.id].url != ""){
-        socket.leave(USER_INFO_DB[socket.id].url);
+    room = userInfo.location;
+    console.log("sessionID:"+socket.sessionID+", userID:"+socket.userID+", username:"+userInfo.username+", location:"+room+", x:"+userInfo.x+", y:"+userInfo.y);
+    if(USER_INFO_DB[socket.sessionID].location != room){
+      if(USER_INFO_DB[socket.sessionID].location != ""){
+        socket.leave(USER_INFO_DB[socket.sessionID].location);
       }
       socket.join(room);
-      console.log(username+"("+socket.id+") changed room from "+USER_INFO_DB[socket.id].url+" to "+room);
+      console.log(socket.userID+"("+socket.username+") changed room from "+USER_INFO_DB[socket.sessionID].location+" to "+room);
     }
-    USER_INFO_DB[socket.id] = {name:userInfo.name, url:room, x:userInfo.x, y:userInfo.y};
+    USER_INFO_DB[socket.sessionID] = {"userID":socket.userID, "username":userInfo.username, "location":room, x:userInfo.x, y:userInfo.y};
   }); 
 
   socket.on('requestUserInfo', function(request){
@@ -50,23 +53,26 @@ io.on("connection",(socket) =>{
     }
     var userInfoInRoom = {};
     for(const clientId of clientIds){
-      userInfoInRoom[clientId]=USER_INFO_DB[clientId];
+      // userInfoInRoom[clientId]=USER_INFO_DB[clientId];
+      userInfoInRoom[USER_INFO_DB[clientId].userID]={
+        // "userID":USER_INFO_DB[clientId].userID,
+        "username":USER_INFO_DB[clientId].username,
+        "location":USER_INFO_DB[clientId].location,
+        "x":USER_INFO_DB[clientId].x,
+        "y":USER_INFO_DB[clientId].y,
+      }
     }
     io.to(room).emit("responseUserInfo",userInfoInRoom);
   });
   
   socket.on('sendMessage', function(request){
     console.log(request.message);
-    io.to(room).emit("receiveMessage",{"id":socket.id,"username":username,"message":request.message});
+    io.to(room).emit("receiveMessage",{"userID":socket.userID,"username":socket.username,"message":request.message});
   });
 
   socket.on("disconnect", () => {
-    const username = socket.username;
-    // const url = sha256(socket.url)
-    // socket.leave(url);
-    // console.log(username+"("+socket.id+") leaved room "+url);  
-    console.log(username+"("+socket.id+") disconnected!");
-    delete USER_INFO_DB[socket.id];
+    console.log(socket.userID+"("+socket.username+") connected!");
+    delete USER_INFO_DB[socket.sessionID];
   });
 });
 
