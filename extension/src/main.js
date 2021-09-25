@@ -1,50 +1,75 @@
-const mmobChatWindowInnerHTML = `
-<ul id="mmob-messages"></ul>
-<div id="mmobchat-box" class="mmobchat-box"></div>
-<form id="mmob-send-form" onsubmit="return false;">
-  <input type="text" id="mmob-my-message" placeholder="メッセージ" required autofocus/>
-  <button id="mmob-send-button" type="button">送信</button>
-</form>
-`
-const jsFrame = new JSFrame();
+var jsFrame;
+// function initializeMMOBChatWindow(){
+  const mmobChatWindowInnerHTML = `
+  <ul id="mmob-messages"></ul>
+  <div id="mmobchat-box" class="mmobchat-box"></div>
+  <form id="mmob-send-form" onsubmit="return false;">
+    <input type="text" id="mmob-my-message" placeholder="メッセージ" required autofocus/>
+    <button id="mmob-send-button" type="button">送信</button>
+  </form>
+  `
+const  jsFrame = new JSFrame();
+  
+// }
+
+
+const appearance = jsFrame.createFrameAppearance();
 const chatFrame = jsFrame.create({
-    title: 'mmobchat-window',
-    title: 'MMOB',
-    left: 20, top: 20, width: 320, height: 220,
-    movable: true,//マウスで移動可能
-    resizable: true,//マウスでリサイズ可能
-    html:mmobChatWindowInnerHTML
+  title: 'mmobchat-window',
+  title: 'MMOB',
+  left: 20, top: 20, width: 320, height: 220,
+  style: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    overflow: 'hidden'
+  },
+  movable: true,//マウスで移動可能
+  resizable: true,//マウスでリサイズ可能
+  appearance: mmobChatWindowAppearance(appearance),
+  html: mmobChatWindowInnerHTML
 });
-chatFrame.hideFrameComponent('closeButton');
-chatFrame.on('#mmob-send-button', 'click', ()=>{
+
+chatFrame.setControl({
+  restoreKey: 'Escape',//If maximizeWithoutTitleBar is true,de-maximize the window when the key specified here is pushed.
+  minimizeButton: 'minimizeButton',//Name of the button on framecomponent to minimize when pressed.
+  deminimizeButton: 'deminimizeButton',//Name of the button on framecomponent to de-minimize when pressed.
+  animation: true,//If true,execute animation during window size changing
+  animationDuration: 150,//Duration of animation
+});
+
+chatFrame.on('hideButton', 'click', (_frame, evt) => {
+  chatFrame.hide();
+  chrome.storage.sync.set({ isChatWindowShown: false });
+});
+
+chatFrame.on('#mmob-send-button', 'click', () => {
   const myMessage = $("#mmob-my-message").val();
-  if(myMessage != null && myMessage != '' ){
-    chrome.runtime.sendMessage({ type: "sendMessage", message: myMessage},function (response) {
+  if (myMessage != null && myMessage != '') {
+    chrome.runtime.sendMessage({ type: "sendMessage", message: myMessage }, function (response) {
       return true;
     });
-    $("#mmob-my-message").val('');  
+    $("#mmob-my-message").val('');
   }
 });
 
-chrome.storage.sync.get(['isConnected','isChatWindowShown'], function(data) {
-  if (data.isConnected && data.isChatWindowShown){
+chrome.storage.sync.get(['isConnected', 'isChatWindowShown'], function (data) {
+  if (data.isConnected && data.isChatWindowShown) {
     chatFrame.show();
   }
 });
 
-window.addEventListener("keydown", function(event) {
-  if(event.ctrlKey&&event.code=="KeyI"){
-    chrome.storage.sync.get(['isConnected','isChatWindowShown'], function(data) {
+window.addEventListener("keydown", function (event) {
+  if (event.ctrlKey && event.code == "KeyI") {
+    chrome.storage.sync.get(['isConnected', 'isChatWindowShown'], function (data) {
       // if (typeof data.isConnected === 'undefined'||typeof data.isChatWindowShown === 'undefined') {
       //   return;
       // }
-      if (data.isConnected){
-        if (data.isChatWindowShown){
+      if (data.isConnected) {
+        if (data.isChatWindowShown) {
           chatFrame.hide();
-          chrome.storage.sync.set({isChatWindowShown: false});
-        }else{
+          chrome.storage.sync.set({ isChatWindowShown: false });
+        } else {
           chatFrame.show();
-          chrome.storage.sync.set({isChatWindowShown: true});
+          chrome.storage.sync.set({ isChatWindowShown: true });
         }
       }
     });
@@ -52,8 +77,8 @@ window.addEventListener("keydown", function(event) {
 }, true);
 
 // エンターキーでメッセージ送信
-$("#mmob-my-message").keydown(function(event) {
-  if( event.keyCode == 13 ) {
+$("#mmob-my-message").keydown(function (event) {
+  if (event.keyCode == 13) {
     $("#mmob-send-button").click();
   }
 });
@@ -96,65 +121,106 @@ chrome.runtime.onMessage.addListener(
         if ($('#mmobplayer-' + id).length) {
           // 更新
           $('#mmobplayer-' + id).css({
-            "top": ui.y + (request.myUserID == id ? 5:0),
-            "left": ui.x + (request.myUserID == id ? 0:0),
+            "top": ui.y + (request.myUserID == id ? 5 : 0),
+            "left": ui.x + (request.myUserID == id ? 0 : 0),
           });
         } else {
           // 初回描写
-          $('body').append('<div id="mmobplayer-'+id+'" class="mmobplayer"></div>');
-          $('#mmobplayer-'+id).append('<img src="' + chrome.runtime.getURL("./img/cursor1.gif") + '" id="mmobcursor-' + id + '" class="mmobcursor"/>');
-          $('#mmobplayer-'+id).append('<span id="mmobname-box-' + id + '" class="mmobname-box">'+ui.username+'</span>');
-          $('#mmobplayer-'+id).append('<div id="mmobspeech-balloon-' + id + '" class="mmobspeech-balloon"></div>');
+          $('body').append('<div id="mmobplayer-' + id + '" class="mmobplayer"></div>');
+          $('#mmobplayer-' + id).append('<img src="' + chrome.runtime.getURL("./img/cursor1.gif") + '" id="mmobcursor-' + id + '" class="mmobcursor"/>');
+          $('#mmobplayer-' + id).append('<span id="mmobname-box-' + id + '" class="mmobname-box">' + ui.username + '</span>');
+          $('#mmobplayer-' + id).append('<div id="mmobspeech-balloon-' + id + '" class="mmobspeech-balloon"></div>');
           $('#mmobplayer-' + id).css({
             "position": "absolute",
-            "top": ui.y + (request.myUserID == id ? 5:0),
-            "left": ui.x + (request.myUserID == id ? 0:0),
+            "top": ui.y + (request.myUserID == id ? 5 : 0),
+            "left": ui.x + (request.myUserID == id ? 0 : 0),
           });
           $('#mmobcursor-' + id).css({
             "position": "absolute",
-            "top":0,
-            "left":0
+            "top": 0,
+            "left": 0
           });
-          $('#mmobname-box-'+ id).css({
-            "display":"inline",
-            "position":"absolute",
-            "top":25,
-            "left":8,
-            "transform":"translateX(-50%)"            
+          $('#mmobname-box-' + id).css({
+            "display": "inline",
+            "position": "absolute",
+            "top": 25,
+            "left": 8,
+            "transform": "translateX(-50%)"
           });
-          $('#mmobspeech-balloon-'+ id).css({
-            "top":-50,
-            "left":0,
-            "transform":"translateX(-50%)"            
+          $('#mmobspeech-balloon-' + id).css({
+            "top": -50,
+            "left": 0,
+            "transform": "translateX(-50%)"
           });
-          if(request.myUserID == id){
+          if (request.myUserID == id) {
             $('#mmobcursor-' + id).hide();
           }
-          $('#mmobspeech-balloon-'+ id).hide();
+          $('#mmobspeech-balloon-' + id).hide();
         }
       }
       sendResponse({});
-    }else if(request.type == "receiveMessage"){
-      const msg = request.username +":"+request.message;
-      $("#mmobchat-box").append( msg + "<br/>" );
-      $("#mmobchat-box").scrollTop( $("#mmobchat-box")[0].scrollHeight);
+    } else if (request.type == "receiveMessage") {
+      const msg = request.username + ":" + request.message;
+      $("#mmobchat-box").append(msg + "<br/>");
+      $("#mmobchat-box").scrollTop($("#mmobchat-box")[0].scrollHeight);
       console.log(request.userID);
-      $('#mmobspeech-balloon-'+ request.userID).text(request.message);
-      $('#mmobspeech-balloon-'+ request.userID).show();
-      setTimeout(()=>{
-        $('#mmobspeech-balloon-'+ request.userID).hide();
+      $('#mmobspeech-balloon-' + request.userID).text(request.message);
+      $('#mmobspeech-balloon-' + request.userID).show();
+      setTimeout(() => {
+        $('#mmobspeech-balloon-' + request.userID).hide();
       }, 5000);
       sendResponse({});
-    }else if(request.type == "logout"){
+    } else if (request.type == "logout") {
       $(".mmobplayer").remove();
       chatFrame.hide();
-      chrome.storage.sync.set({isChatWindowShown: false});
+      chrome.storage.sync.set({ isChatWindowShown: false });
       sendResponse({});
     }
     return true;
   });
 
-  
+function mmobChatWindowAppearance(apr) {
+  apr.onInitialize = function () {
+    var partsBuilder = apr.getPartsBuilder();
+    var btApr = partsBuilder.buildTextButtonAppearance();
+    // 枠線
+    btApr.borderWidth = 1;
+    btApr.borderColorDefault = '#cccccc';
+    btApr.borderColorFocused = '#cccccc';
+    btApr.borderColorHovered = '#eeeeee';
+    btApr.borderColorPressed = '#eeeeee';
+    // 背景
+    btApr.backgroundColorDefault = 'white';
+    btApr.backgroundColorFocused = 'white';
+    btApr.backgroundColorHovered = '#ff3333';
+    btApr.backgroundColorPressed = '#ff3333';
+    btApr.captionColorDefault = 'black';
+    btApr.captionColorFocused = 'black';
+    btApr.captionColorHovered = 'black';
+    btApr.captionColorPressed = 'black';
+    btApr.captionShiftYpx = 1;
+    btApr.captionFontRatio = 0.6;
+
+    btApr.caption = '-';
+    var minimizeBtEle = partsBuilder.buildTextButton(btApr);
+
+    btApr.caption = '\u25A3';
+    var deminimizeBtEle = partsBuilder.buildTextButton(btApr);
+    deminimizeBtEle.style.display = 'none';
+
+    btApr.caption = '\u2573';
+    var hideBtEle = partsBuilder.buildTextButton(btApr);
+
+    var eleTop = 5 - parseInt(apr.titleBarHeight);
+    var eleLeft = -10;
+    var eleAlign = 'RIGHT_TOP';
+    apr.addFrameComponent('minimizeButton', minimizeBtEle, -20 + eleLeft, eleTop, eleAlign);
+    apr.addFrameComponent('deminimizeButton', deminimizeBtEle, -20 + eleLeft, eleTop, eleAlign);
+    apr.addFrameComponent('hideButton', hideBtEle, 0 + eleLeft, eleTop, eleAlign);
+  };
+  return apr;
+}
+
 // $('body').append(
 //   `
 //     <table class="table">
