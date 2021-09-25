@@ -1,6 +1,7 @@
 // const URL = "http://192.168.10.112:3000";
 // const URL = "http://192.168.10.112:3000";
-const URL = "http://localhost:3000";
+const URL = "http://3.19.79.227:3000";
+// const URL = "http://localhost:3000";
 const socket = io(URL,{autoConnect: false, transports: ['websocket', 'polling', 'flashsocket'] });
 var username = "";
 var requestUserInfoIntervalFunc;
