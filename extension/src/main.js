@@ -56,7 +56,7 @@ chrome.runtime.onMessage.addListener(
       chatWindow.show();
       chrome.storage.sync.set({ isChatWindowShown: true });
     } else if (request.type === "updateUserInfo") {
-      // 描写しているがデータが来ないカーソルを消す
+      // データが来ないカーソルを消す
       var newIdList = [];
       for (id in request.userInfo) {
         newIdList.push(id);
@@ -74,7 +74,6 @@ chrome.runtime.onMessage.addListener(
         ui = request.userInfo[id];
         if ($('#mmobplayer-' + id).length) {
           // 更新
-          
           $('#mmobplayer-' + id).css({
             "top": request.myUserID == id ? mouseY + 5 : ui.y,
             "left": request.myUserID == id ? mouseX: ui.x,
@@ -83,7 +82,7 @@ chrome.runtime.onMessage.addListener(
           // 初回描写
           $('body').append('<div id="mmobplayer-' + id + '" class="mmobplayer"></div>');
           $('#mmobplayer-' + id).append('<img src="' + chrome.runtime.getURL("./img/cursor1.gif") + '" id="mmobcursor-' + id + '" class="mmobcursor"/>');
-          $('#mmobplayer-' + id).append('<span id="mmobname-box-' + id + '" class="mmobname-box">' + ui.username + '</span>');
+          $('#mmobplayer-' + id).append('<div id="mmobname-box-' + id + '" class="mmobname-box">' + ui.username + '</div>');
           $('#mmobplayer-' + id).append('<div id="mmobspeech-balloon-' + id + '" class="mmobspeech-balloon"></div>');
           $('#mmobplayer-' + id).css({
             "position": "absolute",
@@ -96,7 +95,6 @@ chrome.runtime.onMessage.addListener(
             "left": 0
           });
           $('#mmobname-box-' + id).css({
-            "display": "inline",
             "position": "absolute",
             "top": 25,
             "left": 8,
