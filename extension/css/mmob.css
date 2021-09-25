@@ -29,42 +29,17 @@
 	margin-left: -9px;
 }
 
-/* .mmobspeech-balloon {
-	position: relative;
-	background: #ffffff;
-	border: 1px solid #000000;
-  border-radius: 3px;
-  box-shadow: 1px 3px 7px 0px #666666;
-}
-.mmobspeech-balloon:after, .mmobspeech-balloon:before {
-	right: 100%;
-	top: 50%;
-	border: solid transparent;
-	content: "";
-	height: 0;
-	width: 0;
-	position: absolute;
-}
-
-.mmobspeech-balloon:after {
-	border-color: rgba(255, 255, 255, 0);
-	border-right-color: #ffffff;
-	border-width: 8px;
-	margin-top: -8px;
-}
-.mmobspeech-balloon:before {
-	border-color: rgba(0, 0, 0, 0);
-	border-right-color: #000000;
-	border-width: 9px;
-	margin-top: -9px;
-} */
-  /* .mmob_player{
-    position:absolute;
-  } */
-
 .mmobname-box{
     background-color:rgba(0,0,0,0.7);
     color:white;
     text-align:center;
+}
+
+.mmobchat-box {
+    padding:5px;
+    border:solid 1px #000;
+    width:80%;
+    height:80%;
+    overflow:auto;
 }
   

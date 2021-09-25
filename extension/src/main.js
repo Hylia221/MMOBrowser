@@ -1,5 +1,6 @@
 const mmobChatWindowInnerHTML = `
 <ul id="mmob-messages"></ul>
+<div id="mmobchat-box" class="mmobchat-box"></div>
 <form id="mmob-send-form" onsubmit="return false;">
   <input type="text" id="mmob-my-message" placeholder="メッセージ" required autofocus/>
   <button id="mmob-send-button" type="button">送信</button>
@@ -51,6 +52,12 @@ window.addEventListener("keydown", function(event) {
   }
 }, true);
 
+// エンターキーでメッセージ送信
+$("#mmob-my-message").keydown(function(event) {
+  if( event.keyCode == 13 ) {
+        $("#mmob-send-button").click();
+  }
+});
 
 $(document).ready(function () {
   chrome.runtime.sendMessage({ type: "updateUserInfo", my_x: -100, my_y: -100 }, function (response) {
@@ -90,8 +97,8 @@ chrome.runtime.onMessage.addListener(
         if ($('#mmobplayer-' + id).length) {
           // 更新
           $('#mmobplayer-' + id).css({
-            "top": ui.y + (request.myUserID == id ? 20:0),
-            "left": ui.x + (request.myUserID == id ? 20:0),
+            "top": ui.y + (request.myUserID == id ? 5:0),
+            "left": ui.x + (request.myUserID == id ? 0:0),
           });
         } else {
           // 初回描写
@@ -101,16 +108,14 @@ chrome.runtime.onMessage.addListener(
           $('#mmobplayer-'+id).append('<div id="mmobspeech-balloon-' + id + '" class="mmobspeech-balloon"></div>');
           $('#mmobplayer-' + id).css({
             "position": "absolute",
-            "top": ui.y + (request.myUserID == id ? 20:0),
-            "left": ui.x + (request.myUserID == id ? 20:0),
+            "top": ui.y + (request.myUserID == id ? -20:0),
+            "left": ui.x + (request.myUserID == id ? -20:0),
           });
-
           $('#mmobcursor-' + id).css({
             "position": "absolute",
             "top":0,
             "left":0
           });
-
           $('#mmobname-box-'+ id).css({
             "display":"inline",
             "position":"absolute",
@@ -123,13 +128,17 @@ chrome.runtime.onMessage.addListener(
             "left":0,
             "transform":"translateX(-50%)"            
           });
+          if(request.myUserID == id){
+            $('#mmobcursor-' + id).hide();
+          }
           $('#mmobspeech-balloon-'+ id).hide();
         }
       }
       sendResponse({});
     }else if(request.type == "receiveMessage"){
       const msg = request.username +":"+request.message;
-      $("#mmob-messages").append('<li>'+msg+'</li>');
+      $("#mmobchat-box").append( msg + "<br/>" );
+      $("#mmobchat-box").scrollTop( $("#mmobchat-box")[0].scrollHeight);
       console.log(request.userID);
       $('#mmobspeech-balloon-'+ request.userID).text(request.message);
       $('#mmobspeech-balloon-'+ request.userID).show();

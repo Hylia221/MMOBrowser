@@ -46,6 +46,13 @@ function viewLoginWindow(){
             });
         });
     });   
+
+    // エンターキーでログイン
+    $("#username").keydown(function(event) {
+        if( event.keyCode == 13 ) {
+          $("#loginButton").click();
+        }
+    });
 }
 
 function hideLoginWindow(){
