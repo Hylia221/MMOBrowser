@@ -1,18 +1,18 @@
-chrome.storage.sync.get('isConnected', function(data) {
+chrome.storage.sync.get('isConnected', function (data) {
     if (typeof data.isConnected === 'undefined') {
         console.log("isConnected undefined");
     } else {
-        console.log("isConnected:"+data.isConnected);
-        if (data.isConnected){
+        console.log("isConnected:" + data.isConnected);
+        if (data.isConnected) {
             showMainWindow();
-        }else{
+        } else {
             viewLoginWindow();
         }
     }
     console.log(data.isConnected);
 });
 
-function viewLoginWindow(){
+function viewLoginWindow() {
     $("#loginWindow").append(`
     <img src="../img/mmob_icon.png">
     <h2>MMOBrowser</h2>
@@ -30,62 +30,72 @@ function viewLoginWindow(){
     </form>
     `);
 
-    $('#loginButton').on('click', function() {
+    $('#loginButton').on('click', function () {
         var username = $("#username").val();
-        chrome.runtime.sendMessage({type:"login", username:username}, function(response) {
-            chrome.storage.sync.get('isConnected', function(data) {
+        chrome.runtime.sendMessage({ type: "login", username: username }, function (response) {
+            chrome.storage.sync.get('isConnected', function (data) {
                 console.log(data.isConnected);
-                if(data.isConnected){
+                if (data.isConnected) {
                     console.log("login successed!")
                     hideLoginWindow();
                     showMainWindow();
-                }else{
+                    showChatWindow();
+                } else {
                     // ログイン失敗メッセージ
                     console.log("login failed.")
                 }
             });
         });
-    });   
+    });
 
     // エンターキーでログイン
-    $("#username").keydown(function(event) {
-        if( event.keyCode == 13 ) {
-          $("#loginButton").click();
+    $("#username").keydown(function (event) {
+        if (event.keyCode == 13) {
+            $("#loginButton").click();
         }
     });
 }
 
-function hideLoginWindow(){
+function hideLoginWindow() {
     $("#loginWindow").empty();
 }
 
-function showMainWindow(){
+function showMainWindow() {
     $("#mainWindow").append(`
-    <form class="w-60 mx-auto" id="loginform">
+    <form class="w-60 mx-auto" id="logoutform">
+        <button type="button" id="showChatWindowButton" class="btn btn-outline-primary my-1">チャットを表示</button>
         <button type="button" id="logoutButton" class="btn btn-outline-primary my-1">ログアウト</button>
     </form>
-    `); 
-    $('#logoutButton').on('click', function() {
-        chrome.runtime.sendMessage({type:"logout"}, function(response) {
-            chrome.storage.sync.get('isConnected', function(data) {
-                if(data.isConnected){
+    `);
+    $('#showChatWindowButton').on('click', function () {
+        showChatWindow();
+    });
+    $('#logoutButton').on('click', function () {
+        chrome.runtime.sendMessage({ type: "logout" }, function (response) {
+            chrome.storage.sync.get('isConnected', function (data) {
+                if (data.isConnected) {
                     // ログアウト失敗メッセージ
                     console.log("logout failed.")
-                }else{
+                } else {
                     hideMainWindow();
-                    viewLoginWindow();                    
-                    // chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
-                    //     chrome.tabs.sendMessage(
-                    //         tabs[0].id, 
-                    //         {"type":"logout"},
-                    //     );
-                    // });              
+                    viewLoginWindow();
                 }
             });
         });
-    });    
+    });
 }
 
-function hideMainWindow(){
+function hideMainWindow() {
     $("#mainWindow").empty();
+}
+
+function showChatWindow() {
+    chrome.tabs.query({}, tabs => {
+        for (let i = 0; i < tabs.length; i++) {
+            chrome.tabs.sendMessage(
+                tabs[i].id,
+                { "type": "showChatWindow" },
+            );
+        }
+    });
 }

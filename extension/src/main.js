@@ -1,13 +1,5 @@
 const chatWindow = createMMOBChatWindow();
-
-chrome.storage.sync.get(['isConnected', 'isChatWindowShown', 'isChatWindowMinimized'], function (data) {
-  if (data.isConnected && data.isChatWindowShown) {
-    if(data.isChatWindowMinimized){
-      chatWindow.control.doCommand('minimize');
-    }
-    chatWindow.show();
-  }
-});
+loadChatWindow();
 
 window.addEventListener("keydown", function (event) {
   if (event.ctrlKey && event.code == "KeyI") {
@@ -50,7 +42,10 @@ $(function () {
 
 chrome.runtime.onMessage.addListener(
   (request, sender, sendResponse) => {
-    if (request.type === "updateUserInfo") {
+    if (request.type === "showChatWindow") {
+      chatWindow.show();
+      chrome.storage.sync.set({ isChatWindowShown: true });
+    } else if (request.type === "updateUserInfo") {
       // 描写しているがデータが来ないカーソルを消す
       var newIdList = [];
       for (id in request.userInfo) {
@@ -180,6 +175,11 @@ function createMMOBChatWindow() {
     }
   });
 
+  // chatWindow.on('frame', 'move', (data)=>{
+  //   chrome.storage.sync.set({ chatWindowX: data.pos });
+  //   chrome.storage.sync.set({ chatWindowY: data.pos });
+  // });
+
   return chatWindow;
 }
 
@@ -223,4 +223,16 @@ function mmobChatWindowAppearance(apr) {
     apr.addFrameComponent('hideButton', hideBtEle, 0 + eleLeft, eleTop, eleAlign);
   };
   return apr;
+}
+function loadChatWindow(){
+  chrome.storage.sync.get(['isConnected', 'isChatWindowShown', 'isChatWindowMinimized', 'chatWindowX', 'chatWindowY'], function (data) {
+    if (data.isConnected && data.isChatWindowShown) {
+      console.log(data.chatWindowX);
+      chatWindow.setPosition(data.chatWindowX, data.chatWindowY, 'LEFT_TOP');
+      if (data.isChatWindowMinimized) {
+        chatWindow.control.doCommand('minimize');
+      }
+      chatWindow.show();
+    }
+  });
 }
