@@ -8,14 +8,14 @@ const mmobChatWindowInnerHTML = `
 `
 const jsFrame = new JSFrame();
 const chatFrame = jsFrame.create({
-    title: 'mmob-chat-window',
+    title: 'mmobchat-window',
     title: 'MMOB',
     left: 20, top: 20, width: 320, height: 220,
     movable: true,//マウスで移動可能
     resizable: true,//マウスでリサイズ可能
     html:mmobChatWindowInnerHTML
 });
-
+chatFrame.hideFrameComponent('closeButton');
 chatFrame.on('#mmob-send-button', 'click', ()=>{
   const myMessage = $("#mmob-my-message").val();
   if(myMessage != null && myMessage != '' ){
@@ -32,7 +32,6 @@ chrome.storage.sync.get(['isConnected','isChatWindowShown'], function(data) {
   }
 });
 
-chatFrame.hideFrameComponent('closeButton');
 window.addEventListener("keydown", function(event) {
   if(event.ctrlKey&&event.code=="KeyI"){
     chrome.storage.sync.get(['isConnected','isChatWindowShown'], function(data) {
@@ -55,7 +54,7 @@ window.addEventListener("keydown", function(event) {
 // エンターキーでメッセージ送信
 $("#mmob-my-message").keydown(function(event) {
   if( event.keyCode == 13 ) {
-        $("#mmob-send-button").click();
+    $("#mmob-send-button").click();
   }
 });
 
@@ -108,8 +107,8 @@ chrome.runtime.onMessage.addListener(
           $('#mmobplayer-'+id).append('<div id="mmobspeech-balloon-' + id + '" class="mmobspeech-balloon"></div>');
           $('#mmobplayer-' + id).css({
             "position": "absolute",
-            "top": ui.y + (request.myUserID == id ? -20:0),
-            "left": ui.x + (request.myUserID == id ? -20:0),
+            "top": ui.y + (request.myUserID == id ? 5:0),
+            "left": ui.x + (request.myUserID == id ? 0:0),
           });
           $('#mmobcursor-' + id).css({
             "position": "absolute",

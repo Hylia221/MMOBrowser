@@ -1,32 +1,104 @@
 <html>
-    <head>
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    </head>
-    <body>
-        <div id = "information">
-            <h2>MMOBrowser manager</h2>
-        </div>
-        <!-- <i class="fas fa-dog fa-3x"></i>
-        <i class="fas fa-times"></i>
-        <i class="fas fa-window-maximize"></i> -->
 
-        <!-- <script src="https://riversun.github.io/jsframe/jsframe.js"></script> -->
-        <script type="text/javascript" src='/js/jsframe.js'></script>
-        <!-- <script type="text/javascript" src='/js/font-awesome-webpack.js'></script> -->
-        <!-- <script type="text/javascript">
-            const jsFrame = new JSFrame();
-            const frame = jsFrame.create({
-                title: 'ウィンドウ',
-                left: 20, top: 20, width: 320, height: 220,
-                movable: true,//マウスで移動可能
-                resizable: true,//マウスでリサイズ可能
-                html: '<div id="my_element" style="padding:10px;font-size:12px;color:darkgray;">Contents of window</div>'
-            });
-            //ウィンドウを表示する
-            frame.show();            
-        </script> -->
-        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-    </body>
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body>
+    <div id="information">
+        <h2>MMOBrowser manager</h2>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/jsframe.js/lib/jsframe.min.js"></script>
+    <script type="text/javascript">
+        const jsFrame = new JSFrame();
+        const appearance = jsFrame.createFrameAppearance();
+        jsframe = jsFrame.create({
+            title: 'MMOB',
+            left: 360, top: 260, width: 320, height: 220,
+            style: {
+                backgroundColor: 'rgba(255,255,255,0.9)',
+                overflow: 'hidden'
+            },
+            appearance: mmobChatWindowAppearance(appearance),
+            html: '<div style="padding:10px;height:100%">Createa appearance object from scratch</div>'
+        }).show();
+        function mmobChatWindowAppearance(apr) {
+            apr.onInitialize = function () {
+                var partsBuilder = apr.getPartsBuilder();
+                var btApr = partsBuilder.buildTextButtonAppearance();
+                // 枠線
+                btApr.borderWidth = 1;
+                btApr.borderColorDefault = '#cccccc';
+                btApr.borderColorFocused = '#cccccc';
+                btApr.borderColorHovered = '#eeeeee';
+                btApr.borderColorPressed = '#eeeeee';
+                // 背景
+                btApr.backgroundColorDefault = 'white';
+                btApr.backgroundColorFocused = 'white';
+                btApr.backgroundColorHovered = '#ff3333';
+                btApr.backgroundColorPressed = '#ff3333';
+                btApr.captionColorDefault = 'black';
+                btApr.captionColorFocused = 'black';
+                btApr.captionColorHovered = 'black';
+                btApr.captionColorPressed = 'black';
+                btApr.captionShiftYpx = 1;
+                btApr.captionFontRatio = 0.6;
+
+                btApr.caption = '-';
+                var minimizeBtEle = partsBuilder.buildTextButton(btApr);
+
+                btApr.caption = '\u25A3';
+                var deminimizeBtEle = partsBuilder.buildTextButton(btApr);
+                deminimizeBtEle.style.display = 'none';
+
+                btApr.caption = '\u2610';
+                var maximizeBtEle = partsBuilder.buildTextButton(btApr);
+
+                btApr.caption = '\u274F';
+                var demaximizeBtEle = partsBuilder.buildTextButton(btApr);
+                demaximizeBtEle.style.display = 'none';
+
+                btApr.caption = '\u2573';
+                var hideBtEle = partsBuilder.buildTextButton(btApr);
+
+                var eleTop = 5 - parseInt(apr.titleBarHeight);
+                var eleLeft = -10;
+                var eleAlign = 'RIGHT_TOP';
+                apr.addFrameComponent('minimizeButton', minimizeBtEle, -40 + eleLeft, eleTop, eleAlign);
+                apr.addFrameComponent('deminimizeButton', deminimizeBtEle, -40 + eleLeft, eleTop, eleAlign);
+                apr.addFrameComponent('maximizeButton', maximizeBtEle, -20 + eleLeft, eleTop, eleAlign);
+                apr.addFrameComponent('demaximizeButton', demaximizeBtEle, -20 + eleLeft, eleTop, eleAlign);
+                apr.addFrameComponent('hideButton', hideBtEle, 0 + eleLeft, eleTop, eleAlign);
+            };
+            return apr;
+        }
+        
+        jsframe.on('hideButton', 'click', (_frame, evt) => {
+            jsframe.hide();
+        });
+
+        jsframe.setControl({
+            maximizeButton: 'maximizeButton',//Name of the button on framecomponent to maximize when pressed.
+            demaximizeButton: 'demaximizeButton',//Name of the button on framecomponent to de-maximize when pressed.
+            restoreKey: 'Escape',//If maximizeWithoutTitleBar is true,de-maximize the window when the key specified here is pushed.
+            minimizeButton: 'minimizeButton',//Name of the button on framecomponent to minimize when pressed.
+            deminimizeButton: 'deminimizeButton',//Name of the button on framecomponent to de-minimize when pressed.
+            animation: true,//If true,execute animation during window size changing
+            animationDuration: 150,//Duration of animation
+        });
+
+    </script>
+    <script type="text/javascript" src='/js/jsframe.js'></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+</body>
+
 </html>
