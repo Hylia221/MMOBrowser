@@ -1,74 +1,23 @@
-var jsFrame;
-// function initializeMMOBChatWindow(){
-  const mmobChatWindowInnerHTML = `
-  <ul id="mmob-messages"></ul>
-  <div id="mmobchat-box" class="mmobchat-box"></div>
-  <form id="mmob-send-form" onsubmit="return false;">
-    <input type="text" id="mmob-my-message" placeholder="メッセージ" required autofocus/>
-    <button id="mmob-send-button" type="button">送信</button>
-  </form>
-  `
-const  jsFrame = new JSFrame();
-  
-// }
+const chatWindow = createMMOBChatWindow();
 
-
-const appearance = jsFrame.createFrameAppearance();
-const chatFrame = jsFrame.create({
-  title: 'mmobchat-window',
-  title: 'MMOB',
-  left: 20, top: 20, width: 320, height: 220,
-  style: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    overflow: 'hidden'
-  },
-  movable: true,//マウスで移動可能
-  resizable: true,//マウスでリサイズ可能
-  appearance: mmobChatWindowAppearance(appearance),
-  html: mmobChatWindowInnerHTML
-});
-
-chatFrame.setControl({
-  restoreKey: 'Escape',//If maximizeWithoutTitleBar is true,de-maximize the window when the key specified here is pushed.
-  minimizeButton: 'minimizeButton',//Name of the button on framecomponent to minimize when pressed.
-  deminimizeButton: 'deminimizeButton',//Name of the button on framecomponent to de-minimize when pressed.
-  animation: true,//If true,execute animation during window size changing
-  animationDuration: 150,//Duration of animation
-});
-
-chatFrame.on('hideButton', 'click', (_frame, evt) => {
-  chatFrame.hide();
-  chrome.storage.sync.set({ isChatWindowShown: false });
-});
-
-chatFrame.on('#mmob-send-button', 'click', () => {
-  const myMessage = $("#mmob-my-message").val();
-  if (myMessage != null && myMessage != '') {
-    chrome.runtime.sendMessage({ type: "sendMessage", message: myMessage }, function (response) {
-      return true;
-    });
-    $("#mmob-my-message").val('');
-  }
-});
-
-chrome.storage.sync.get(['isConnected', 'isChatWindowShown'], function (data) {
+chrome.storage.sync.get(['isConnected', 'isChatWindowShown', 'isChatWindowMinimized'], function (data) {
   if (data.isConnected && data.isChatWindowShown) {
-    chatFrame.show();
+    if(data.isChatWindowMinimized){
+      chatWindow.control.doCommand('minimize');
+    }
+    chatWindow.show();
   }
 });
 
 window.addEventListener("keydown", function (event) {
   if (event.ctrlKey && event.code == "KeyI") {
     chrome.storage.sync.get(['isConnected', 'isChatWindowShown'], function (data) {
-      // if (typeof data.isConnected === 'undefined'||typeof data.isChatWindowShown === 'undefined') {
-      //   return;
-      // }
       if (data.isConnected) {
         if (data.isChatWindowShown) {
-          chatFrame.hide();
+          chatWindow.hide();
           chrome.storage.sync.set({ isChatWindowShown: false });
         } else {
-          chatFrame.show();
+          chatWindow.show();
           chrome.storage.sync.set({ isChatWindowShown: true });
         }
       }
@@ -172,12 +121,67 @@ chrome.runtime.onMessage.addListener(
       sendResponse({});
     } else if (request.type == "logout") {
       $(".mmobplayer").remove();
-      chatFrame.hide();
+      chatWindow.hide();
       chrome.storage.sync.set({ isChatWindowShown: false });
       sendResponse({});
     }
     return true;
   });
+
+function createMMOBChatWindow() {
+  const mmobChatWindowInnerHTML = `
+    <ul id="mmob-messages"></ul>
+    <div id="mmobchat-box" class="mmobchat-box"></div>
+    <form id="mmob-send-form" onsubmit="return false;">
+      <input type="text" id="mmob-my-message" placeholder="メッセージ" required autofocus/>
+      <button id="mmob-send-button" type="button">送信</button>
+    </form>
+    `
+  const jsFrame = new JSFrame();
+  const appearance = jsFrame.createFrameAppearance();
+  const chatWindow = jsFrame.create({
+    title: 'mmobchat-window',
+    title: 'MMOB',
+    left: 20, top: 20, width: 320, height: 220,
+    style: {
+      backgroundColor: 'rgba(255,255,255,0.9)',
+      overflow: 'hidden'
+    },
+    movable: true,//マウスで移動可能
+    resizable: true,//マウスでリサイズ可能
+    appearance: mmobChatWindowAppearance(appearance),
+    html: mmobChatWindowInnerHTML
+  });
+
+  chatWindow.setControl({
+    minimizeButton: 'minimizeButton',//Name of the button on framecomponent to minimize when pressed.
+    deminimizeButton: 'deminimizeButton',//Name of the button on framecomponent to de-minimize when pressed.
+    animation: true,//If true,execute animation during window size changing
+    animationDuration: 150,//Duration of animation
+  });
+
+  chatWindow.on('hideButton', 'click', (_frame, evt) => {
+    chatWindow.hide();
+    chrome.storage.sync.set({ isChatWindowShown: false });
+  });
+  chatWindow.control.on('minimized', (frame, info) => {
+    chrome.storage.sync.set({ isChatWindowMinimized: true });
+  });
+  chatWindow.control.on('deminimized', (frame, info) => {
+    chrome.storage.sync.set({ isChatWindowMinimized: false });
+  });
+  chatWindow.on('#mmob-send-button', 'click', () => {
+    const myMessage = $("#mmob-my-message").val();
+    if (myMessage != null && myMessage != '') {
+      chrome.runtime.sendMessage({ type: "sendMessage", message: myMessage }, function (response) {
+        return true;
+      });
+      $("#mmob-my-message").val('');
+    }
+  });
+
+  return chatWindow;
+}
 
 function mmobChatWindowAppearance(apr) {
   apr.onInitialize = function () {
@@ -220,41 +224,3 @@ function mmobChatWindowAppearance(apr) {
   };
   return apr;
 }
-
-// $('body').append(
-//   `
-//     <table class="table">
-//     <thead>
-//       <tr>
-//         <th scope="col">#</th>
-//         <th scope="col">id</th>
-//         <th scope="col">name</th>
-//         <th scope="col">url</th>
-//         <th scope="col">x</th>
-//         <th scope="col">y</th>
-//       </tr>
-//     </thead>
-//     <tbody id="userInfo">
-//     </tbody>
-//     <table>
-//     `
-// );
-
-//       // for testserver
-//       var userCount = 0;
-//       // console.log(request.userInfo);
-//       $("#userInfo tr").remove();
-//       for (id in request.userInfo) {
-//         ui = request.userInfo[id];
-//         userCount++;
-//         $("#userInfo").append(
-//           '<tr>'
-//           + '<th scope="row">' + userCount + '</th>'
-//           + '<td>' + id + '</td>'
-//           + '<td>' + ui.name + '</td>'
-//           + '<td>' + ui.url + '</td>'
-//           + '<td>' + ui.x + '</td>'
-//           + '<td>' + ui.y + '</td>'
-//           + '</tr>'
-//         );
-//       }

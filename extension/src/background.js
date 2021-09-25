@@ -9,6 +9,9 @@ var requestUserInfoIntervalFunc;
 function initMMOB(){
   chrome.storage.sync.set({isConnected: false});
   chrome.storage.sync.set({isChatWindowShown: true});
+  chrome.storage.sync.set({isChatWindowMinimized: false});
+  chrome.storage.sync.set({chatWindow_x: 100});
+  chrome.storage.sync.set({chatWindow_y: 100});
   // chrome.storage.sync.get('isConnected', function(data) {
   //   if (typeof data.isConnected === 'undefined') {
   //     // console.log("set isConnected = false for the first time.")
