@@ -1,5 +1,17 @@
+var mouseX = 0;
+var mouseY = 0;
+var mouseMoved = false;
 const chatWindow = createMMOBChatWindow();
 loadChatWindow();
+
+var requestUserInfoIntervalFunc = setInterval(function(){
+  if(mouseMoved){
+    chrome.runtime.sendMessage({ type: "updateUserInfo", my_x: mouseX, my_y: mouseY }, function (response) {
+      return true;
+    });
+    mouseMoved = false;
+  }
+}, 50);
 
 window.addEventListener("keydown", function (event) {
   if (event.ctrlKey && event.code == "KeyI") {
@@ -32,11 +44,9 @@ $(document).ready(function () {
 
 $(function () {
   $(window).on('mousemove', function (e) {
-    var my_x = e.pageX;
-    var my_y = e.pageY;
-    chrome.runtime.sendMessage({ type: "updateUserInfo", my_x: my_x, my_y: my_y }, function (response) {
-      return true;
-    });
+    mouseX = e.pageX;
+    mouseY = e.pageY;
+    mouseMoved = true;
   });
 });
 
@@ -64,9 +74,10 @@ chrome.runtime.onMessage.addListener(
         ui = request.userInfo[id];
         if ($('#mmobplayer-' + id).length) {
           // 更新
+          
           $('#mmobplayer-' + id).css({
-            "top": ui.y + (request.myUserID == id ? 5 : 0),
-            "left": ui.x + (request.myUserID == id ? 0 : 0),
+            "top": request.myUserID == id ? mouseY + 5 : ui.y,
+            "left": request.myUserID == id ? mouseX: ui.x,
           });
         } else {
           // 初回描写
@@ -76,8 +87,8 @@ chrome.runtime.onMessage.addListener(
           $('#mmobplayer-' + id).append('<div id="mmobspeech-balloon-' + id + '" class="mmobspeech-balloon"></div>');
           $('#mmobplayer-' + id).css({
             "position": "absolute",
-            "top": ui.y + (request.myUserID == id ? 5 : 0),
-            "left": ui.x + (request.myUserID == id ? 0 : 0),
+            "top": request.myUserID == id ? mouseY + 5 : ui.y,
+            "left": request.myUserID == id ? mouseX: ui.x,
           });
           $('#mmobcursor-' + id).css({
             "position": "absolute",
@@ -227,8 +238,8 @@ function mmobChatWindowAppearance(apr) {
 function loadChatWindow(){
   chrome.storage.sync.get(['isConnected', 'isChatWindowShown', 'isChatWindowMinimized', 'chatWindowX', 'chatWindowY'], function (data) {
     if (data.isConnected && data.isChatWindowShown) {
-      console.log(data.chatWindowX);
-      chatWindow.setPosition(data.chatWindowX, data.chatWindowY, 'LEFT_TOP');
+      // console.log(data.chatWindowX);
+      // chatWindow.setPosition(data.chatWindowX, data.chatWindowY, 'LEFT_TOP');
       if (data.isChatWindowMinimized) {
         chatWindow.control.doCommand('minimize');
       }

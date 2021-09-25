@@ -21,7 +21,7 @@
         }
     ],
     "background":{
-        "scripts":["src/socket.io.js","src/sha256.js","src/background.js"],
+        "scripts":["src/socket.io.js","src/sha256-uint8array.min.js","src/background.js"],
         "persistent": true
     },
     "web_accessible_resources":["img/mmob_icon_old.png","img/cursor1.gif","img/curso2.gif","img/cursor3.gif"]
