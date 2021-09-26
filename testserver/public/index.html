@@ -9,123 +9,22 @@
     <div id="information">
         <h2>MMOBrowser manager</h2>
     </div>
+   <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="820" height="1280" viewBox="0 0 820 1280"
+   <metadata>
+   Created by potrace 1.15, written by Peter Selinger 2001-2017
+   </metadata>
+   <g transform="translate(0,0) scale(1,-1)" fill="#FFFFFF" stroke="black" stroke-width="500">
+   <path d="M0 7623 l1 -5178 1207 1213 1207 1213 1254 -2435 1254 -2436 1199 0
+   c659 0 1198 2 1198 5 0 3 -18 38 -39 78 -21 40 -127 241 -234 447 -173 333
+   -1696 3258 -2281 4379 -121 234 -222 429 -224 433 -2 4 827 8 1842 8 l1846 0
+   0 70 0 69 -923 833 c-507 459 -2015 1821 -3352 3028 -1337 1207 -2743 2477
+   -3125 2822 l-695 628 -67 0 -68 0 0 -5177z"/>
+   </g>
+   </svg>
+   
     <script src="https://cdn.jsdelivr.net/npm/jsframe.js/lib/jsframe.min.js"></script>
     <script type="text/javascript">
-        const jsFrame = new JSFrame({
-            horizontalAlign: 'left',
-            verticalAlign: 'top',
-        });
 
-        function rest() {
-            var frame = jsFrame.getWindowByName('Win0');
-            frame.control.doDehide();
-        }
-
-        function start() {
-            const appearance = jsFrame.createFrameAppearance();
-            const frame = jsFrame.create({
-                name: `Win`,
-                title: `Win - Win10 style`,
-                left: 20, top: 40, width: 320, height: 220, minWidth: 200, minHeight: 110,
-                // appearanceName: 'material',
-                style: {
-                    backgroundColor: 'rgba(255,255,255,0.8)',
-                    overflow: 'auto'
-                },
-                appearance: mmobChatWindowAppearance(appearance),
-                // appearence:mmobChatWindowAppearance(appearance),
-                url: 'iframe_content03.html',
-            }).show();
-
-
-            // frame.setControl({
-            //     maximizeButton: 'maximizeButton',
-            //     demaximizeButton: 'restoreButton',
-            //     minimizeButton: 'minimizeButton',
-            //     deminimizeButton: 'deminimizeButton',
-            //     animation: true,
-            //     animationDuration: 200,
-            // });
-
-            frame.on('minButton', 'click', (_frame, evt) => {
-                _frame.control.doMinimize({
-                    duration: 200,
-                    callback: (frame, info) => {
-                        jsFrame.showToast({
-                            text: frame.getName() + ' ' + info.eventType
-                        });
-                    }
-                });
-
-            });
-            frame.on('deminButton', 'click', (_frame, evt) => {
-                _frame.control.doDeminimize({
-                    duration: 200,
-                    callback: (frame, info) => {
-                        jsFrame.showToast({
-                            text: frame.getName() + ' ' + info.eventType
-                        });
-                    }
-                });
-            });
-
-            frame.on('closeButton', 'click', (_frame, evt) => {
-                _frame.control.doHide({
-                    duration: 100,
-                    align: 'CENTER_BOTTOM',
-                    callback: (frame, info) => {
-                        jsFrame.showToast({
-                            text: frame.getName() + ' ' + info.eventType
-                        });
-                        _frame.closeFrame();
-                    }
-                })
-            });
-        }
-
-        start();
-
-        function mmobChatWindowAppearance(apr) {
-            apr.onInitialize = function () {
-                var partsBuilder = apr.getPartsBuilder();
-                var btApr = partsBuilder.buildTextButtonAppearance();
-                // 枠線
-                btApr.borderWidth = 1;
-                btApr.borderColorDefault = '#cccccc';
-                btApr.borderColorFocused = '#cccccc';
-                btApr.borderColorHovered = '#eeeeee';
-                btApr.borderColorPressed = '#eeeeee';
-                // 背景
-                btApr.backgroundColorDefault = 'white';
-                btApr.backgroundColorFocused = 'white';
-                btApr.backgroundColorHovered = '#ff3333';
-                btApr.backgroundColorPressed = '#ff3333';
-                btApr.captionColorDefault = 'black';
-                btApr.captionColorFocused = 'black';
-                btApr.captionColorHovered = 'black';
-                btApr.captionColorPressed = 'black';
-                btApr.captionShiftYpx = 1;
-                btApr.captionFontRatio = 0.6;
-
-                btApr.caption = '-';
-                var minimizeBtEle = partsBuilder.buildTextButton(btApr);
-
-                btApr.caption = '\u25A3';
-                var deminimizeBtEle = partsBuilder.buildTextButton(btApr);
-                deminimizeBtEle.style.display = 'none';
-
-                btApr.caption = '\u2573';
-                var hideBtEle = partsBuilder.buildTextButton(btApr);
-
-                var eleTop = 5 - parseInt(apr.titleBarHeight);
-                var eleLeft = -10;
-                var eleAlign = 'RIGHT_TOP';
-                apr.addFrameComponent('minButton', minimizeBtEle, -20 + eleLeft, eleTop, eleAlign);
-                apr.addFrameComponent('deminButton', deminimizeBtEle, -20 + eleLeft, eleTop, eleAlign);
-                apr.addFrameComponent('hideButton', hideBtEle, 0 + eleLeft, eleTop, eleAlign);
-            };
-            return apr;
-        }
     </script>
     <script type="text/javascript" src='/js/jsframe.js'></script>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"

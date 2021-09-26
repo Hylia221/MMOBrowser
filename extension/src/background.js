@@ -1,9 +1,9 @@
 // const URL = "http://192.168.10.112:3000";
-// const URL = "http://192.168.10.112:3000";
-const URL = "http://3.19.79.227:3000";
-// const URL = "http://localhost:3000";
+const URL = "http://localhost:3000";
+// const URL = "http://3.19.79.227:3000";
 const socket = io(URL, { autoConnect: false, transports: ['websocket', 'polling', 'flashsocket'] });
 var username = "";
+var cursorColor = "#FFFFFF";
 var requestUserInfoIntervalFunc;
 
 function initMMOB() {
@@ -20,6 +20,7 @@ chrome.runtime.onMessage.addListener(
    function (request, sender, sendResponse) {
     if (request.type == "login") {
       username = request.username;
+      cursorColor = request.cursorColor;
       socket.auth = { username };
       socket.connect();
       requestUserInfoIntervalFunc = setInterval(() => {
@@ -52,6 +53,7 @@ chrome.runtime.onMessage.addListener(
         const location = SHA256.createHash().update(deletedParamsUrl).digest("hex");;
         const myInfo = {
           "username": username,
+          "cursorColor":cursorColor,
           "location": location,
           "x": request.my_x,
           "y": request.my_y,
@@ -71,7 +73,6 @@ chrome.runtime.onMessage.addListener(
 
 socket.on("session", ({ sessionID, userID }) => {
   socket.auth = { sessionID };
-  // localStorage.setItem("sessionID", sessionID);
   socket.userID = userID;
 });
 
@@ -92,20 +93,3 @@ socket.on("receiveMessage", (response) => {
     );
   });
 });
-
-// chrome.windows.onRemoved.addListener(function(windowid) {
-//   chrome.storage.sync.set({isConnected:false});
-//  });
-
-//  // On tab updated
-// chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-//   if (changeInfo.status == "loading") {
-//   } else if (changeInfo.status == "complete") {
-//     socket.emit('requestUserInfo', {url:tab.url});
-//   }
-// });
-
-// // On tab removed
-// chrome.tabs.onRemoved.addListener(function(tabId) {
-//   socket.emit('requestUserInfo', {url:tabs[0].url});
-// });

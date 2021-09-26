@@ -16,10 +16,8 @@ io.use((socket, next) => {
 });
 
 io.on("connection",(socket) =>{
-  // var username = socket.username;
-  // var 
   var room = "";
-  USER_INFO_DB[socket.sessionID] = {"userID":socket.userID, "username":socket.username, "location":"", x:0, y:0};
+  USER_INFO_DB[socket.sessionID] = {"userID":socket.userID, "username":socket.username, "cursorColor":"#FFFFFF", "location":"", x:0, y:0};
   console.log(socket.userID+"("+socket.username+") connected!");
   socket.emit("session", {
     sessionID: socket.sessionID,
@@ -28,7 +26,7 @@ io.on("connection",(socket) =>{
 
   socket.on('updateUserInfo', function(userInfo){
     room = userInfo.location;
-    console.log("sessionID:"+socket.sessionID+", userID:"+socket.userID+", username:"+userInfo.username+", location:"+room+", x:"+userInfo.x+", y:"+userInfo.y);
+    // console.log("sessionID:"+socket.sessionID+", userID:"+socket.userID+", username:"+userInfo.username+", location:"+room+", x:"+userInfo.x+", y:"+userInfo.y);
     if(USER_INFO_DB[socket.sessionID].location != room){
       if(USER_INFO_DB[socket.sessionID].location != ""){
         socket.leave(USER_INFO_DB[socket.sessionID].location);
@@ -36,7 +34,7 @@ io.on("connection",(socket) =>{
       socket.join(room);
       console.log(socket.userID+"("+socket.username+") changed room from "+USER_INFO_DB[socket.sessionID].location+" to "+room);
     }
-    USER_INFO_DB[socket.sessionID] = {"userID":socket.userID, "username":userInfo.username, "location":room, x:userInfo.x, y:userInfo.y};
+    USER_INFO_DB[socket.sessionID] = {"userID":socket.userID, "username":userInfo.username, "cursorColor":userInfo.cursorColor, "location":room, x:userInfo.x, y:userInfo.y};
   }); 
 
   socket.on('requestUserInfo', function(request){
@@ -53,10 +51,9 @@ io.on("connection",(socket) =>{
     }
     var userInfoInRoom = {};
     for(const clientId of clientIds){
-      // userInfoInRoom[clientId]=USER_INFO_DB[clientId];
       userInfoInRoom[USER_INFO_DB[clientId].userID]={
-        // "userID":USER_INFO_DB[clientId].userID,
         "username":USER_INFO_DB[clientId].username,
+        "cursorColor":USER_INFO_DB[clientId].cursorColor,
         "location":USER_INFO_DB[clientId].location,
         "x":USER_INFO_DB[clientId].x,
         "y":USER_INFO_DB[clientId].y,

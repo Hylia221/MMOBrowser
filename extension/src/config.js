@@ -23,16 +23,19 @@ function viewLoginWindow() {
                required autofocus/>
     </div>
     <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" id="autologin">
-        <label class="form-check-label" for="autologin">次回から自動的にログインする</label>
-    </div>
+        <label>
+            <input type="color" name="my-cursor-color" value="#FFFFFF">
+            カーソルの色を選択
+        </label>
+        </div>
     <button type="button" id="loginButton" class="btn btn-outline-primary w-75">ログイン</button>
     </form>
     `);
 
     $('#loginButton').on('click', function () {
         var username = $("#username").val();
-        chrome.runtime.sendMessage({ type: "login", username: username }, function (response) {
+        var myCursorColor = $("#my-cursor-color").val();
+        chrome.runtime.sendMessage({ type: "login", username: username, cursorColor:myCursorColor}, function (response) {
             chrome.storage.sync.get('isConnected', function (data) {
                 console.log(data.isConnected);
                 if (data.isConnected) {
