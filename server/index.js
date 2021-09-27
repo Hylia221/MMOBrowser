@@ -68,7 +68,7 @@ io.on("connection",(socket) =>{
   });
 
   socket.on("disconnect", () => {
-    console.log(socket.userID+"("+socket.username+") connected!");
+    console.log(socket.userID+"("+socket.username+") disconnected!");
     delete USER_INFO_DB[socket.sessionID];
   });
 });
