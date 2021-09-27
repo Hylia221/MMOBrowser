@@ -149,7 +149,7 @@ function createMMOBChatWindow() {
     <ul id="mmob-messages"></ul>
     <div id="mmobchat-box" class="mmobchat-box"></div>
     <form id="mmob-send-form" onsubmit="return false;">
-      <input type="text" id="mmob-my-message" placeholder="メッセージ" required autofocus/>
+      <input type="text" id="mmob-my-message" placeholder="メッセージ" autofocus/>
       <button id="mmob-send-button" type="button">送信</button>
     </form>
     `
