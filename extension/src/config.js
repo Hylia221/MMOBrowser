@@ -24,7 +24,7 @@ function viewLoginWindow() {
     </div>
     <div class="form-group form-check">
         <label>
-            <input type="color" name="my-cursor-color" value="#FFFFFF">
+            <input type="color" id="my-cursor-color" value="#FFFFFF">
             カーソルの色を選択
         </label>
         </div>
@@ -35,6 +35,7 @@ function viewLoginWindow() {
     $('#loginButton').on('click', function () {
         var username = $("#username").val();
         var myCursorColor = $("#my-cursor-color").val();
+        console.log(myCursorColor);
         chrome.runtime.sendMessage({ type: "login", username: username, cursorColor:myCursorColor}, function (response) {
             chrome.storage.sync.get('isConnected', function (data) {
                 console.log(data.isConnected);

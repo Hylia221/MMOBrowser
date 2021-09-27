@@ -81,18 +81,19 @@ chrome.runtime.onMessage.addListener(
         } else {
           // 初回描写
           $('body').append('<div id="mmobplayer-' + id + '" class="mmobplayer"></div>');
-          $('#mmobplayer-' + id).append('<img src="' + chrome.runtime.getURL("./img/cursor1.gif") + '" id="mmobcursor-' + id + '" class="mmobcursor"/>');
-          // $('#mmobplayer-' + id).append('<svg id="mmobcursor-' + id + `" class="mmobcursor" version="1.0" xmlns="http://www.w3.org/2000/svg" width="82" height="130" viewBox="0 0 82 128">
-          // <metadata>Created by potrace 1.15, written by Peter Selinger 2001-2017</metadata>
-          // <g transform="translate(0.000000,128.000000) scale(0.00150,-0.00150) " 
-          // fill="`+ui.cursorColor+`" stroke="black" stroke-width="500">
-          // <path d="M0 7623 l1 -5178 1207 1213 1207 1213 1254 -2435 1254 -2436 1199 0
-          // c659 0 1198 2 1198 5 0 3 -18 38 -39 78 -21 40 -127 241 -234 447 -173 333
-          // -1696 3258 -2281 4379 -121 234 -222 429 -224 433 -2 4 827 8 1842 8 l1846 0
-          // 0 70 0 69 -923 833 c-507 459 -2015 1821 -3352 3028 -1337 1207 -2743 2477
-          // -3125 2822 l-695 628 -67 0 -68 0 0 -5177z"/>
-          // </g></svg>
-          // `);
+          // $('#mmobplayer-' + id).append('<img src="' + chrome.runtime.getURL("./img/cursor1.gif") + '" id="mmobcursor-' + id + '" class="mmobcursor"/>');
+          $('#mmobplayer-' + id).append('<svg id="mmobcursor-' + id + `" class="mmobcursor" version="1.0" xmlns="http://www.w3.org/2000/svg" width="82" height="130" viewBox="0 108 82 128">
+          <metadata>Created by potrace 1.15, written by Peter Selinger 2001-2017</metadata>
+          <g transform="translate(0.0,128.0) scale(0.00150,-0.00150) " 
+          fill="`+ui.cursorColor+`" stroke="black" stroke-width="500">
+          <path d="M0 7623 l1 -5178 1207 1213 1207 1213 1254 -2435 1254 -2436 1199 0
+          c659 0 1198 2 1198 5 0 3 -18 38 -39 78 -21 40 -127 241 -234 447 -173 333
+          -1696 3258 -2281 4379 -121 234 -222 429 -224 433 -2 4 827 8 1842 8 l1846 0
+          0 70 0 69 -923 833 c-507 459 -2015 1821 -3352 3028 -1337 1207 -2743 2477
+          -3125 2822 l-695 628 -67 0 -68 0 0 -5177z"/>
+          </g></svg>
+          `);
+          console.log(ui);
           $('#mmobplayer-' + id).append('<div id="mmobname-box-' + id + '" class="mmobname-box">' + ui.username + '</div>');
           $('#mmobplayer-' + id).append('<div id="mmobspeech-balloon-' + id + '" class="mmobspeech-balloon"></div>');
           $('#mmobplayer-' + id).css({
