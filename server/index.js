@@ -24,6 +24,7 @@ io.on("connection",(socket) =>{
     userID: socket.userID,
   });
 
+  // ユーザ情報の更新
   socket.on('updateUserInfo', function(userInfo){
     room = userInfo.location;
     // console.log("sessionID:"+socket.sessionID+", userID:"+socket.userID+", username:"+userInfo.username+", location:"+room+", x:"+userInfo.x+", y:"+userInfo.y);
@@ -37,6 +38,7 @@ io.on("connection",(socket) =>{
     USER_INFO_DB[socket.sessionID] = {"userID":socket.userID, "username":userInfo.username, "cursorColor":userInfo.cursorColor, "location":room, x:userInfo.x, y:userInfo.y};
   }); 
 
+  // ユーザ情報取得要求に返答する
   socket.on('requestUserInfo', function(request){
     const rooms = io.of("/").adapter.rooms;
     var clientIds;
@@ -45,7 +47,6 @@ io.on("connection",(socket) =>{
         clientIds = r[1];
       }
     }
-
     if (typeof clientIds === 'undefined') {
       return;
     }

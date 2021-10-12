@@ -1,3 +1,5 @@
+const USERNAME_MAXLENGTH = 10;
+
 chrome.storage.sync.get('isConnected', function (data) {
     if (typeof data.isConnected === 'undefined') {
         console.log("isConnected undefined");
@@ -19,7 +21,7 @@ function viewLoginWindow() {
     <form class="mx-auto" id="loginform">
     <div class="form-group w-75 mt-5 mx-auto">
            <input class="form-control" id="username"
-               type="text" name="username" placeholder="ユーザ名" 
+               type="text" name="username" placeholder="ユーザ名（10文字以内）" 
                required autofocus/>
     </div>
     <div class="form-group form-check">
@@ -28,7 +30,7 @@ function viewLoginWindow() {
             カーソルの色を選択
         </label>
         </div>
-    <button type="button" id="loginButton" class="btn btn-outline-primary w-75">ログイン</button>
+    <button type="button" id="loginButton" class="btn btn-primary w-75" disabled>ログイン</button>
     </form>
     `);
 
@@ -52,10 +54,23 @@ function viewLoginWindow() {
         });
     });
 
+    // ユーザ名の文字数制限
+    $('#username').on('input', function(){
+        var cnt = $(this).val().length;
+        if(cnt > 0 && USERNAME_MAXLENGTH > cnt){
+            $('#loginButton').prop('disabled', false);
+        }else{
+            $('#loginButton').prop('disabled', true);
+        }
+    });
+
     // エンターキーでログイン
     $("#username").keydown(function (event) {
         if (event.keyCode == 13) {
-            $("#loginButton").click();
+            var cnt = $('#username').val().length;
+            if(cnt > 0 && cnt < USERNAME_MAXLENGTH){
+                $("#loginButton").click();
+            }
         }
     });
 }
