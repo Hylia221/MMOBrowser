@@ -13,8 +13,7 @@
     "content_scripts":[
         {
           "matches": [ 
-            "http://*/*",
-            "https://*/*"
+            "https://ja.wikipedia.org/wiki/*"
           ],
           "js":["src/jquery-3.6.0.min.js","src/font-awesome-webpack.js","src/jsframe.js","src/main.js"],
             "css":["css/mmob.css"]

@@ -1,17 +1,4 @@
 # MMOBrowser
 MMOBrowser(Massively Multiplayer Online Browser)とは、大規模多人数が同時にWebサイトを閲覧できるようにするChrome拡張機能です。
 
-## 実装予定・バグメモ
-- チャット欄の位置を右下にする
-- 全てのデータの型と値(文字数,エスケープシーケンス等)チェック
-- チャット欄の見た目をよくする
-- 自分のマウスカーソルの色を変える
-- ページを変えたときのみURLを送信
-- READMEを書く
-## 実装済み
-- マウスを動かすと出るエラーを消す
-- チャット欄をマウスでしまえるようにする
-- チャット欄をマウスで消せるようにする
-- chromeを閉じたときにログアウトする
-- UserIDとSessionIDを分割する
-- URLのパラメータを消す
+詳細はhttps://qiita.com/Hylia221/items/6142bdc527cc6b3c9fe5
