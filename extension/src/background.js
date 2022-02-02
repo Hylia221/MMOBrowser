@@ -1,4 +1,5 @@
-const URL = "http://3.19.79.227:3000";
+// const URL = "http://3.19.79.227:3000";
+const URL = "http://localhost:3000";
 const socket = io(URL, { autoConnect: false, transports: ['websocket', 'polling', 'flashsocket'] });
 var username = "";
 var cursorColor = "#FFFFFF";
@@ -21,11 +22,6 @@ chrome.runtime.onMessage.addListener(
       cursorColor = request.cursorColor;
       socket.auth = { username };
       socket.connect();
-      requestUserInfoIntervalFunc = setInterval(() => {
-        if (socket.connected) {
-          socket.emit('requestUserInfo', {});
-        }
-      }, 50);
       chrome.storage.sync.set({ isConnected: true });
       console.log("login!");
       sendResponse({});
@@ -42,13 +38,12 @@ chrome.runtime.onMessage.addListener(
           );
         }
       });
-      clearInterval(requestUserInfoIntervalFunc);
       console.log("logout!");
       sendResponse({});
     } else if (request.type == "updateUserInfo") {
       if (socket.connected) {
         const deletedParamsUrl = sender.tab.url.replace(/\?.*$/, "");
-        const location = SHA256.createHash().update(deletedParamsUrl).digest("hex");;
+        const location = deletedParamsUrl;
         const myInfo = {
           "username": username,
           "cursorColor":cursorColor,
@@ -91,3 +86,8 @@ socket.on("receiveMessage", (response) => {
     );
   });
 });
+
+
+
+
+

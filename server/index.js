@@ -38,31 +38,6 @@ io.on("connection",(socket) =>{
     USER_INFO_DB[socket.sessionID] = {"userID":socket.userID, "username":userInfo.username, "cursorColor":userInfo.cursorColor, "location":room, x:userInfo.x, y:userInfo.y};
   }); 
 
-  // ユーザ情報取得要求に返答する
-  socket.on('requestUserInfo', function(request){
-    const rooms = io.of("/").adapter.rooms;
-    var clientIds;
-    for(r of rooms){
-      if(r[0] == room){
-        clientIds = r[1];
-      }
-    }
-    if (typeof clientIds === 'undefined') {
-      return;
-    }
-    var userInfoInRoom = {};
-    for(const clientId of clientIds){
-      userInfoInRoom[USER_INFO_DB[clientId].userID]={
-        "username":USER_INFO_DB[clientId].username,
-        "cursorColor":USER_INFO_DB[clientId].cursorColor,
-        "location":USER_INFO_DB[clientId].location,
-        "x":USER_INFO_DB[clientId].x,
-        "y":USER_INFO_DB[clientId].y,
-      }
-    }
-    io.to(room).emit("responseUserInfo",userInfoInRoom);
-  });
-  
   socket.on('sendMessage', function(request){
     console.log(request.message);
     io.to(room).emit("receiveMessage",{"userID":socket.userID,"username":socket.username,"message":request.message});
@@ -79,3 +54,31 @@ const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () =>
   console.log(`server listening at http://localhost:${PORT}`)
 );
+
+// 全てのユーザに画面更新用の情報を送信(定期実行)
+requestUserInfoIntervalFunc = setInterval(() => {
+  // 毎回部屋を検索している。遅くなりそう。
+  const rooms = io.of("/").adapter.rooms;
+  var regexp = new RegExp("http");
+  for(r of rooms){
+    const room = r[0];
+    const clientIds = r[1];
+    if (!regexp.test(room)){
+      continue;
+    }
+    if (typeof clientIds === 'undefined') {
+      continue;
+    }
+    var userInfoInRoom = {};
+    for(const clientId of clientIds){
+      userInfoInRoom[USER_INFO_DB[clientId].userID]={
+        "username":USER_INFO_DB[clientId].username,
+        "cursorColor":USER_INFO_DB[clientId].cursorColor,
+        "location":USER_INFO_DB[clientId].location,
+        "x":USER_INFO_DB[clientId].x,
+        "y":USER_INFO_DB[clientId].y,
+      }
+    }
+    io.to(room).emit("responseUserInfo",userInfoInRoom);  
+  }
+}, 16);

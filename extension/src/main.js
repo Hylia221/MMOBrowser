@@ -13,7 +13,7 @@ var requestUserInfoIntervalFunc = setInterval(function(){
     });
     mouseMoved = false;
   }
-}, 50);
+}, 16);
 
 // 初回更新
 $(document).ready(function () {
