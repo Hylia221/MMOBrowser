@@ -1,9 +1,13 @@
 const crypto = require('crypto');
 const httpServer = require('http').createServer();
 const io = require('socket.io')(httpServer);
+const { performance } = require('perf_hooks');
+
 const randomID = () => crypto.randomBytes(8).toString("hex");
 
-var USER_INFO_DB={};
+const FPS = 60;
+let USER_INFO_DB={};
+
 io.use((socket, next) => {
   const username = socket.handshake.auth.username;
   if (!username) {
@@ -55,8 +59,9 @@ httpServer.listen(PORT, () =>
   console.log(`server listening at http://localhost:${PORT}`)
 );
 
-// 全てのユーザに画面更新用の情報を送信(定期実行)
-requestUserInfoIntervalFunc = setInterval(() => {
+// 全てのユーザに画面更新用の情報を送信(最大60FPS)
+function updateUserInfo(){
+  const startTime = performance.now(); // 開始時間
   // 毎回部屋を検索している。遅くなりそう。
   const rooms = io.of("/").adapter.rooms;
   var regexp = new RegExp("http");
@@ -81,4 +86,10 @@ requestUserInfoIntervalFunc = setInterval(() => {
     }
     io.to(room).emit("responseUserInfo",userInfoInRoom);  
   }
-}, 16);
+  const endTime = performance.now(); // 終了時間
+  let delay = 1000.0/FPS - (endTime - startTime);
+  delay = delay > 0 ? Math.round(delay):0;
+  console.log(delay);
+}
+
+updateUserInfo();
