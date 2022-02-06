@@ -1,5 +1,10 @@
+// const { userInfo } = require('os');
 const crypto = require('crypto');
-const httpServer = require('http').createServer();
+var express = require('express');
+const cors = require('cors');
+var app = express();
+app.use(cors());
+const httpServer = require('http').createServer(app);
 const io = require('socket.io')(httpServer);
 const { performance } = require('perf_hooks');
 
@@ -7,6 +12,31 @@ const randomID = () => crypto.randomBytes(8).toString("hex");
 
 const FPS = 60;
 let USER_INFO_DB={};
+
+app.get("/api/connections", function (request, response) {
+  let connections = {};
+  connections["connections"]=Object.keys(USER_INFO_DB).length;
+  response.json(connections);
+});
+
+app.get("/api/userInfo", function (request, response) {
+  let userInfo = []
+  for(let key in USER_INFO_DB){
+    userInfo.push({username:USER_INFO_DB[key]["username"], cursorColor:USER_INFO_DB[key]["cursorColor"],location:USER_INFO_DB[key]["location"]});
+  }
+  response.json(userInfo);
+});
+
+app.get("/api/locationInfo", function (request, response) {
+  let locationInfo = {};
+  for(let key in USER_INFO_DB){
+    locationInfo[USER_INFO_DB[key]["location"]] = (USER_INFO_DB[key]["location"] in locationInfo ? locationInfo[USER_INFO_DB[key]["location"]]+1 : 1);
+  }
+  var locationInfoArr = Object.keys(locationInfo).map((k)=>({ location: k, connections: locationInfo[k] }));
+  //接続の多い順にソート
+  locationInfoArr.sort((a, b) => b.connections - a.connections);
+  response.json(locationInfoArr);
+});
 
 io.use((socket, next) => {
   const username = socket.handshake.auth.username;
@@ -57,7 +87,7 @@ const PORT = process.env.PORT || 3000;
 
 httpServer.listen(PORT, () =>
   console.log(`server listening at http://localhost:${PORT}`)
-);
+  );
 
 // 全てのユーザに画面更新用の情報を送信(最大60FPS)
 function updateUserInfo(){
@@ -89,7 +119,7 @@ function updateUserInfo(){
   const endTime = performance.now(); // 終了時間
   let delay = 1000.0/FPS - (endTime - startTime);
   delay = delay > 0 ? Math.round(delay):0;
-  console.log(delay);
+  setTimeout(updateUserInfo,delay);
 }
 
 updateUserInfo();

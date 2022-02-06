@@ -1,4 +1,4 @@
-const USERNAME_MAXLENGTH = 10;
+const USERNAME_MAXLENGTH = 16;
 
 chrome.storage.sync.get('isConnected', function (data) {
     if (typeof data.isConnected === 'undefined') {
@@ -21,7 +21,7 @@ function viewLoginWindow() {
     <form class="mx-auto" id="loginform">
     <div class="form-group w-75 mt-5 mx-auto">
            <input class="form-control" id="username"
-               type="text" name="username" placeholder="ユーザ名（10文字以内）" 
+               type="text" name="username" placeholder="ユーザ名（16文字以内）" 
                required autofocus/>
     </div>
     <div class="form-group form-check">
@@ -32,8 +32,10 @@ function viewLoginWindow() {
         </div>
     <button type="button" id="loginButton" class="btn btn-primary w-75" disabled>ログイン</button>
     </form>
+    <p>現在の接続者数：<span class="mmob-connections">ロード中...</span></p>
     `);
 
+    getConnections();
     $('#loginButton').on('click', function () {
         var username = $("#username").val();
         var myCursorColor = $("#my-cursor-color").val();
@@ -81,11 +83,13 @@ function hideLoginWindow() {
 
 function showMainWindow() {
     $("#mainWindow").append(`
+    <p>現在の接続者数：<span class="mmob-connections">ロード中...</span></p>
     <form class="w-60 mx-auto" id="logoutform">
         <button type="button" id="showChatWindowButton" class="btn btn-outline-primary my-1">チャットを表示</button>
         <button type="button" id="logoutButton" class="btn btn-outline-primary my-1">ログアウト</button>
     </form>
     `);
+    getConnections();
     $('#showChatWindowButton').on('click', function () {
         showChatWindow();
     });
@@ -118,3 +122,17 @@ function showChatWindow() {
         }
     });
 }
+
+function getConnections(){
+    var request = new XMLHttpRequest();
+    request.open('GET', 'http://localhost:3000/api/connections', true);
+    request.responseType = 'json';
+    request.onload = function () {
+      var data = this.response;
+      console.log(data.connections);
+      $(".mmob-connections").text(data.connections);
+    };
+    request.send();
+}
+
+setInterval(getConnections,5000);

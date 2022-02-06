@@ -8,12 +8,13 @@
       "default_icon": {
         "16": "img/mmob_icon.png"
       },
-      "default_popup": "src/config.html"
+      "default_popup": "src/popup.html"
     },
     "content_scripts":[
         {
           "matches": [ 
-            "https://ja.wikipedia.org/wiki/*"
+            "https://ja.wikipedia.org/wiki/*",
+            "https://qiita.com/*"
           ],
           "js":["src/jquery-3.6.0.min.js","src/font-awesome-webpack.js","src/jsframe.js","src/main.js"],
             "css":["css/mmob.css"]

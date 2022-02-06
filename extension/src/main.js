@@ -173,11 +173,12 @@ function createMMOBChatWindow() {
       <button id="mmob-send-button" type="button" disabled>送信</button>
     </form>
     `
+  
   const jsFrame = new JSFrame();
   const appearance = jsFrame.createFrameAppearance();
   const chatWindow = jsFrame.create({
     title: 'mmobchat-window',
-    title: 'MMOB',
+    title: 'MMOB Chat',
     left: 20, top: 20, width: 320, height: 220,
     style: {
       backgroundColor: 'rgba(255,255,255,0.9)',
@@ -226,10 +227,43 @@ function createMMOBChatWindow() {
         $('#mmob-send-button').prop('disabled', true);
     }
   });
-  // chatWindow.on('frame', 'move', (data)=>{
-  //   chrome.storage.sync.set({ chatWindowX: data.pos });
-  //   chrome.storage.sync.set({ chatWindowY: data.pos });
-  // });
+
+  // 移動時にPositionを保存
+  let timeoutMoveID;
+  let timeoutMoveDelay = 100;
+  chatWindow.on('frame', 'move', (data)=>{
+    if(timeoutMoveID){return};
+    timeoutMoveID = setTimeout(()=>{
+      timeoutMoveID = 0;
+      chrome.storage.sync.set({ chatWindowPos: data.pos });
+    },timeoutMoveDelay);
+  });
+  // 保存されたPositionを反映
+  chrome.storage.sync.get(['chatWindowPos'], function (data) {
+    if(data.chatWindowPos){
+      chatWindow.setPosition(data.chatWindowPos.x,data.chatWindowPos.y); 
+    }
+  });
+
+  // リサイズ時にsizeを保存
+  let timeoutResizeID;
+  let timeoutResizeDelay = 100;
+  chatWindow.on('frame', 'resize', (data)=>{
+    if(timeoutResizeID){return};
+    timeoutResizeID = setTimeout(()=>{
+      console.log(data.size);
+      timeoutResizeID = 0;
+      chrome.storage.sync.set({ chatWindowSize: data.size });
+    },timeoutResizeDelay);
+  });
+  // 保存されたsizeを反映
+  chrome.storage.sync.get(['chatWindowSize'], function (data) {
+    console.log(data.chatWindowSize);
+    if(data.chatWindowSize){
+      chatWindow.setSize(data.chatWindowSize.width,data.chatWindowSize.height); 
+    }
+  });
+
 
   return chatWindow;
 }

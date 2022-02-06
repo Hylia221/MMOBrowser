@@ -43,7 +43,7 @@ chrome.runtime.onMessage.addListener(
     } else if (request.type == "updateUserInfo") {
       if (socket.connected) {
         const deletedParamsUrl = sender.tab.url.replace(/\?.*$/, "");
-        const location = deletedParamsUrl;
+        const location = decodeURI(deletedParamsUrl);
         const myInfo = {
           "username": username,
           "cursorColor":cursorColor,
