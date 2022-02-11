@@ -48,6 +48,7 @@ function viewLoginWindow() {
                     hideLoginWindow();
                     showMainWindow();
                     showChatWindow();
+                    showWorldInfoWindow();
                 } else {
                     // ログイン失敗メッセージ
                     console.log("login failed.")
@@ -85,13 +86,17 @@ function showMainWindow() {
     $("#mainWindow").append(`
     <p>現在の接続者数：<span class="mmob-connections">ロード中...</span></p>
     <form class="w-60 mx-auto" id="logoutform">
-        <button type="button" id="showChatWindowButton" class="btn btn-outline-primary my-1">チャットを表示</button>
-        <button type="button" id="logoutButton" class="btn btn-outline-primary my-1">ログアウト</button>
+        <button type="button" id="showChatWindowButton" class="btn btn-primary my-1">チャットを表示</button>
+        <button type="button" id="showWorldInfoWindowButton" class="btn btn-primary my-1">ワールド情報を表示</button>
+        <button type="button" id="logoutButton" class="btn btn-primary my-1">ログアウト</button>
     </form>
     `);
     getConnections();
     $('#showChatWindowButton').on('click', function () {
         showChatWindow();
+    });
+    $('#showWorldInfoWindowButton').on('click', function () {
+        showWorldInfoWindow();
     });
     $('#logoutButton').on('click', function () {
         chrome.runtime.sendMessage({ type: "logout" }, function (response) {
@@ -118,6 +123,17 @@ function showChatWindow() {
             chrome.tabs.sendMessage(
                 tabs[i].id,
                 { "type": "showChatWindow" },
+            );
+        }
+    });
+}
+
+function showWorldInfoWindow() {
+    chrome.tabs.query({}, tabs => {
+        for (let i = 0; i < tabs.length; i++) {
+            chrome.tabs.sendMessage(
+                tabs[i].id,
+                { "type": "showWorldInfoWindow" },
             );
         }
     });

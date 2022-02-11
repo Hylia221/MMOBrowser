@@ -2,8 +2,12 @@ const MESSAGE_MAX_LENGTH = 50;
 var mouseX = 0;
 var mouseY = 0;
 var mouseMoved = false;
+
+// ウインドウを生成
 const chatWindow = createMMOBChatWindow();
-loadChatWindow();
+const worldInfoWindow = createMMOBWorldInfoWindow();
+// 保存された情報に基づいてウインドウの初期状態をロード
+loadInitialStateOfWindow();
 
 // 自カーソル位置の送信
 var requestUserInfoIntervalFunc = setInterval(function(){
@@ -38,6 +42,10 @@ chrome.runtime.onMessage.addListener(
       // チャットウィンドウを表示する
       chatWindow.show();
       chrome.storage.sync.set({ isChatWindowShown: true });
+    } else if (request.type === "showWorldInfoWindow") {
+      // ワールド情報ウィンドウを表示する
+      worldInfoWindow.show();
+      chrome.storage.sync.set({ isWorldInfoWindowShown: true });
     } else if (request.type === "updateUserInfo") {
       // データが来ないカーソルを消す
       var newIdList = [];
@@ -92,18 +100,21 @@ chrome.runtime.onMessage.addListener(
           $('#mmobcursor-' + id).css({
             "position": "absolute",
             "top": 0,
-            "left": 0
+            "left": 0,
+            "z-index": 9999
           });
           $('#mmobname-box-' + id).css({
             "position": "absolute",
             "top": 25,
             "left": 8,
-            "transform": "translateX(-50%)"
+            "transform": "translateX(-50%)",
+            "z-index": 9999
           });
           $('#mmobspeech-balloon-' + id).css({
             "top": -50,
             "left": 0,
-            "transform": "translateX(-50%)"
+            "transform": "translateX(-50%)",
+            "z-index": 9999
           });
           if (myUserID == id) {
             $('#mmobcursor-' + id).hide();
@@ -130,6 +141,7 @@ chrome.runtime.onMessage.addListener(
       // ログアウト処理
       $(".mmobplayer").remove();
       chatWindow.hide();
+      worldInfoWindow.hide();
       chrome.storage.sync.set({ isChatWindowShown: false });
       sendResponse({});
     }
@@ -137,21 +149,21 @@ chrome.runtime.onMessage.addListener(
   });
 
 // チャットウインドウの表示(キーボードショットカット)
-window.addEventListener("keydown", function (event) {
-  if (event.ctrlKey && event.code == "KeyI") {
-    chrome.storage.sync.get(['isConnected', 'isChatWindowShown'], function (data) {
-      if (data.isConnected) {
-        if (data.isChatWindowShown) {
-          chatWindow.hide();
-          chrome.storage.sync.set({ isChatWindowShown: false });
-        } else {
-          chatWindow.show();
-          chrome.storage.sync.set({ isChatWindowShown: true });
-        }
-      }
-    });
-  }
-}, true);
+// window.addEventListener("keydown", function (event) {
+//   if (event.ctrlKey && event.code == "KeyI") {
+//     chrome.storage.sync.get(['isConnected', 'isChatWindowShown'], function (data) {
+//       if (data.isConnected) {
+//         if (data.isChatWindowShown) {
+//           chatWindow.hide();
+//           chrome.storage.sync.set({ isChatWindowShown: false });
+//         } else {
+//           chatWindow.show();
+//           chrome.storage.sync.set({ isChatWindowShown: true });
+//         }
+//       }
+//     });
+//   }
+// }, true);
 
 // エンターキーでメッセージ送信
 $("#mmob-my-message").keydown(function (event) {
@@ -166,15 +178,13 @@ $("#mmob-my-message").keydown(function (event) {
 // チャットウィンドウの生成
 function createMMOBChatWindow() {
   const mmobChatWindowInnerHTML = `
-    <ul id="mmob-messages"></ul>
     <div id="mmobchat-box" class="mmobchat-box"></div>
     <form id="mmob-send-form" onsubmit="return false;">
       <input type="text" id="mmob-my-message" placeholder="メッセージ（50文字以内）" autofocus/>
       <button id="mmob-send-button" type="button" disabled>送信</button>
     </form>
-    `
-  
-  const jsFrame = new JSFrame();
+    `;
+  const jsFrame = new JSFrame({parentElement:document.body});
   const appearance = jsFrame.createFrameAppearance();
   const chatWindow = jsFrame.create({
     title: 'mmobchat-window',
@@ -190,13 +200,13 @@ function createMMOBChatWindow() {
     html: mmobChatWindowInnerHTML
   });
 
+  // ウインドウの閉じるボタン・縮小化ボタンの設定
   chatWindow.setControl({
-    minimizeButton: 'minimizeButton',//Name of the button on framecomponent to minimize when pressed.
-    deminimizeButton: 'deminimizeButton',//Name of the button on framecomponent to de-minimize when pressed.
-    animation: true,//If true,execute animation during window size changing
-    animationDuration: 150,//Duration of animation
+    minimizeButton: 'minimizeButton',
+    deminimizeButton: 'deminimizeButton',
+    animation: true,
+    animationDuration: 150,
   });
-
   chatWindow.on('hideButton', 'click', (_frame, evt) => {
     chatWindow.hide();
     chrome.storage.sync.set({ isChatWindowShown: false });
@@ -207,6 +217,7 @@ function createMMOBChatWindow() {
   chatWindow.control.on('deminimized', (frame, info) => {
     chrome.storage.sync.set({ isChatWindowMinimized: false });
   });
+
   // メッセージの送信
   chatWindow.on('#mmob-send-button', 'click', () => {
     const myMessage = $("#mmob-my-message").val();
@@ -217,9 +228,8 @@ function createMMOBChatWindow() {
       $("#mmob-my-message").val('');
     }
   });
-  // ユーザ名の文字数制限
+  // メッセージの文字数制限
   chatWindow.on('#mmob-my-message', 'input', () => {
-    // $('#mmob-my-message').on('input', function(){
     var cnt = $('#mmob-my-message').val().length;
     if(cnt > 0 && cnt < MESSAGE_MAX_LENGTH){
         $('#mmob-send-button').prop('disabled', false);
@@ -229,41 +239,27 @@ function createMMOBChatWindow() {
   });
 
   // 移動時にPositionを保存
-  let timeoutMoveID;
-  let timeoutMoveDelay = 100;
+  let chatWindowTimeoutMoveID;
+  let chatWindowTimeoutMoveDelay = 100;
   chatWindow.on('frame', 'move', (data)=>{
-    if(timeoutMoveID){return};
-    timeoutMoveID = setTimeout(()=>{
-      timeoutMoveID = 0;
+    if(chatWindowTimeoutMoveID){return};
+    chatWindowTimeoutMoveID = setTimeout(()=>{
+      chatWindowTimeoutMoveID = 0;
       chrome.storage.sync.set({ chatWindowPos: data.pos });
-    },timeoutMoveDelay);
-  });
-  // 保存されたPositionを反映
-  chrome.storage.sync.get(['chatWindowPos'], function (data) {
-    if(data.chatWindowPos){
-      chatWindow.setPosition(data.chatWindowPos.x,data.chatWindowPos.y); 
-    }
+    },chatWindowTimeoutMoveDelay);
   });
 
   // リサイズ時にsizeを保存
-  let timeoutResizeID;
-  let timeoutResizeDelay = 100;
+  let chatWindowTimeoutResizeID;
+  let chatWindowTimeoutResizeDelay = 100;
   chatWindow.on('frame', 'resize', (data)=>{
-    if(timeoutResizeID){return};
-    timeoutResizeID = setTimeout(()=>{
+    if(chatWindowTimeoutResizeID){return};
+    chatWindowTimeoutResizeID = setTimeout(()=>{
       console.log(data.size);
-      timeoutResizeID = 0;
+      chatWindowTimeoutResizeID = 0;
       chrome.storage.sync.set({ chatWindowSize: data.size });
-    },timeoutResizeDelay);
+    },chatWindowTimeoutResizeDelay);
   });
-  // 保存されたsizeを反映
-  chrome.storage.sync.get(['chatWindowSize'], function (data) {
-    console.log(data.chatWindowSize);
-    if(data.chatWindowSize){
-      chatWindow.setSize(data.chatWindowSize.width,data.chatWindowSize.height); 
-    }
-  });
-
 
   return chatWindow;
 }
@@ -311,19 +307,238 @@ function mmobChatWindowAppearance(apr) {
   return apr;
 }
 
-// チャットウィンドウの初期状態ロード
-function loadChatWindow(){
-  chrome.storage.sync.get(['isConnected', 'isChatWindowShown', 'isChatWindowMinimized', 'chatWindowX', 'chatWindowY'], function (data) {
-    if (data.isConnected && data.isChatWindowShown) {
-      // console.log(data.chatWindowX);
-      // chatWindow.setPosition(data.chatWindowX, data.chatWindowY, 'LEFT_TOP');
-      if (data.isChatWindowMinimized) {
-        chatWindow.control.doCommand('minimize');
+// ワールド情報表示ウィンドウの生成
+function createMMOBWorldInfoWindow() {
+  //     <div id="mmobworldinfo-box" class="mmobworldinfo-box">ワールド情報</div><table class="table">
+  const mmobWorldInfoWindowInnerHTML = `
+    <div class="overflow-auto" style="margin-left:auto; margin-right: auto; height:90%">
+    <table class="table table-sm mmob-worldtable overflow-auto">
+    <thead class="thead-dark">
+      <tr>
+          <th class="text-center" style="width: 30px;"></th>
+          <th class="text-center">ワールド名</th>
+          <th class="text-center" style="width: 60px;">接続数</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr data-toggle="collapse" data-target="#employeeList1">
+          <td class="text-center">\u2795</td>
+          <td>qiita.com</td>
+          <td class="text-center">3</td>
+      </tr>
+      <tr>
+          <td class="p-0"></td>
+          <td colspan="2" class="p-0">
+              <div id="employeeList1" class="collapse">
+                  <table class="table thead-dark">
+                      <tbody>
+                          <tr>
+                              <td>1</td>
+                              <!-- <td>https://qiita.com/yoshii0110/items/88b50a72155988fea05e</td> -->
+                              <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
+                              <td class="text-center" style="width: 60px;">5</td>
+                          </tr>
+                          <tr>
+                              <td>2</td>
+                              <!-- <td>yoshii0110/items/88b50a72155988fea05e</td> -->
+                              <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
+                              <td class="text-center" style="width: 60px;">5</td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div>
+          </td>
+      </tr>
+      <tr data-toggle="collapse" data-target="#employeeList2">
+          <td class="text-center">\u2795</td>
+          <td>wikipedia.org</td>
+          <td class="text-center">3</td>
+      </tr>
+      <tr>
+          <td class="p-0"></td>
+          <td colspan="2" class="p-0">
+              <div id="employeeList2" class="collapse">
+                  <table class="table thead-dark">
+                      <tbody>
+                          <tr>
+                              <td>1</td>
+                              <!-- <td>https://qiita.com/yoshii0110/items/88b50a72155988fea05e</td> -->
+                              <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
+                              <td class="text-center" style="width: 60px;">5</td>
+                          </tr>
+                          <tr>
+                              <td>2</td>
+                              <!-- <td>yoshii0110/items/88b50a72155988fea05e</td> -->
+                              <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
+                              <td class="text-center" style="width: 60px;">5</td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div>
+          </td>
+      </tr>
+  </tbody>
+  </table>
+  </div>
+    `;
+  const jsFrame = new JSFrame({parentElement:document.body});
+  const appearance = jsFrame.createFrameAppearance();
+  const worldInfoWindow = jsFrame.create({
+    title: 'mmobworldinfo-window',
+    title: 'MMOB ワールド情報',
+    left: 350, top: 20, width: 320, height: 220,
+    style: {
+      backgroundColor: 'rgba(255,255,255,0.9)',
+      overflow: 'hidden'
+    },
+    movable: true,//マウスで移動可能
+    resizable: true,//マウスでリサイズ可能
+    appearance: mmobWorldInfoWindowAppearance(appearance),
+    html: mmobWorldInfoWindowInnerHTML
+  });
+
+  // ウインドウの閉じるボタン・縮小化ボタンの設定
+  worldInfoWindow.setControl({
+    minimizeButton: 'minimizeButton',
+    deminimizeButton: 'deminimizeButton',
+    animation: true,
+    animationDuration: 150,
+  });
+  worldInfoWindow.on('hideButton', 'click', (_frame, evt) => {
+    worldInfoWindow.hide();
+    chrome.storage.sync.set({ isWorldInfoWindowShown: false });
+  });
+  worldInfoWindow.control.on('minimized', (frame, info) => {
+    chrome.storage.sync.set({ isWorldInfoWindowMinimized: true });
+  });
+  worldInfoWindow.control.on('deminimized', (frame, info) => {
+    chrome.storage.sync.set({ isWorldInfoWindowMinimized: false });
+  });
+
+  function getWorldInfo(){
+    var request = new XMLHttpRequest();
+    request.open('GET', 'http://localhost:3000/api/locationInfo', true);
+    request.responseType = 'json';
+    request.onload = function () {
+      var data = this.response;
+      console.log(data);
+      $("#mmobworldinfo-box").text(data);
+    };
+    request.send();
+  }
+  setInterval(getWorldInfo,5000);
+
+
+  // 移動時にPositionを保存
+  let timeoutMoveID;
+  let timeoutMoveDelay = 100;
+  worldInfoWindow.on('frame', 'move', (data)=>{
+    if(timeoutMoveID){return};
+    timeoutMoveID = setTimeout(()=>{
+      timeoutMoveID = 0;
+      chrome.storage.sync.set({ worldInfoWindowPos: data.pos });
+    },timeoutMoveDelay);
+  });
+
+  // リサイズ時にsizeを保存
+  let timeoutResizeID;
+  let timeoutResizeDelay = 100;
+  worldInfoWindow.on('frame', 'resize', (data)=>{
+    if(timeoutResizeID){return};
+    timeoutResizeID = setTimeout(()=>{
+      console.log(data.size);
+      timeoutResizeID = 0;
+      chrome.storage.sync.set({ worldInfoWindowSize: data.size });
+    },timeoutResizeDelay);
+  });
+
+  return worldInfoWindow;
+}
+
+// ワールド情報ウィンドウの書式
+function mmobWorldInfoWindowAppearance(apr) {
+  apr.onInitialize = function () {
+    var partsBuilder = apr.getPartsBuilder();
+    var btApr = partsBuilder.buildTextButtonAppearance();
+    // 枠線
+    btApr.borderWidth = 1;
+    btApr.borderColorDefault = '#cccccc';
+    btApr.borderColorFocused = '#cccccc';
+    btApr.borderColorHovered = '#eeeeee';
+    btApr.borderColorPressed = '#eeeeee';
+    // 背景
+    btApr.backgroundColorDefault = 'white';
+    btApr.backgroundColorFocused = 'white';
+    btApr.backgroundColorHovered = '#ff3333';
+    btApr.backgroundColorPressed = '#ff3333';
+    btApr.captionColorDefault = 'black';
+    btApr.captionColorFocused = 'black';
+    btApr.captionColorHovered = 'black';
+    btApr.captionColorPressed = 'black';
+    btApr.captionShiftYpx = 1;
+    btApr.captionFontRatio = 0.6;
+
+    btApr.caption = '-';
+    var minimizeBtEle = partsBuilder.buildTextButton(btApr);
+
+    btApr.caption = '\u25A3';
+    var deminimizeBtEle = partsBuilder.buildTextButton(btApr);
+    deminimizeBtEle.style.display = 'none';
+
+    btApr.caption = '\u2573';	
+    var hideBtEle = partsBuilder.buildTextButton(btApr);
+
+    var eleTop = 5 - parseInt(apr.titleBarHeight);
+    var eleLeft = -10;
+    var eleAlign = 'RIGHT_TOP';
+    apr.addFrameComponent('minimizeButton', minimizeBtEle, -20 + eleLeft, eleTop, eleAlign);
+    apr.addFrameComponent('deminimizeButton', deminimizeBtEle, -20 + eleLeft, eleTop, eleAlign);
+    apr.addFrameComponent('hideButton', hideBtEle, 0 + eleLeft, eleTop, eleAlign);
+  };
+  return apr;
+}
+
+
+// ウィンドウの初期状態ロード
+function loadInitialStateOfWindow(){
+  chrome.storage.sync.get(['isConnected', 'isChatWindowShown', 'isChatWindowMinimized', 'chatWindowPos', 'chatWindowSize', 'isWorldInfoWindowShown', 'isWorldInfoWindowMinimized', 'worldInfoWindowPos', 'worldInfoWindowSize'], function (data) {
+    if (data.isConnected) {
+      if(data.isChatWindowShown){
+        // チャットウィンドウの位置ロード
+        if(data.chatWindowPos){
+          chatWindow.setPosition(data.chatWindowPos.x,data.chatWindowPos.y); 
+        }
+        // チャットウィンドウのサイズロード
+        if(data.chatWindowSize){
+          chatWindow.setSize(data.chatWindowSize.width,data.chatWindowSize.height); 
+        }
+        // チャットウィンドウの縮小化状態ロード
+        if (data.isChatWindowMinimized) {
+          chatWindow.control.doCommand('minimize');
+        }
+        console.log("chatWindow");
+        chatWindow.show();
       }
-      chatWindow.show();
+      if(data.isWorldInfoWindowShown){
+        // ワールド情報ウィンドウの位置ロード
+        if(data.worldInfoWindowPos){
+          worldInfoWindow.setPosition(data.worldInfoWindowPos.x,data.worldInfoWindowPos.y); 
+        }
+        // ワールド情報ウィンドウのサイズロード
+        if(data.worldInfoWindowSize){
+          worldInfoWindow.setSize(data.worldInfoWindowSize.width,data.worldInfoWindowSize.height); 
+        }
+        // ワールド情報ウィンドウの縮小化状態ロード
+        if (data.isWorldInfoWindowMinimized) {
+          worldInfoWindow.control.doCommand('minimize');
+        }
+        console.log("worldInfoWindow");
+        worldInfoWindow.show();        
+      }
     }
   });
 }
+
 
 function escapeHTML(string){
   return string.replace(/&/g, '&lt;')

@@ -16,12 +16,12 @@
             "https://ja.wikipedia.org/wiki/*",
             "https://qiita.com/*"
           ],
-          "js":["src/jquery-3.6.0.min.js","src/font-awesome-webpack.js","src/jsframe.js","src/main.js"],
-            "css":["css/mmob.css"]
+          "js":["src/jquery-3.6.0.min.js","src/bootstrap.min.js","src/font-awesome-webpack.js","src/jsframe.js","src/main.js"],
+            "css":["css/mmob.css","css/bootstrap.min.css"]
         }
     ],
     "background":{
-        "scripts":["src/socket.io.js","src/sha256-uint8array.min.js","src/background.js"],
+        "scripts":["src/socket.io.js","src/background.js"],
         "persistent": true
     },
     "web_accessible_resources":["img/mmob_icon_old.png","img/cursor1.gif","img/curso2.gif","img/cursor3.gif"]
