@@ -48,6 +48,7 @@ chrome.runtime.onMessage.addListener(
           "username": username,
           "cursorColor":cursorColor,
           "location": location,
+          "title": request.title,
           "x": request.my_x,
           "y": request.my_y,
         }

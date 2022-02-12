@@ -16,7 +16,7 @@
             "https://ja.wikipedia.org/wiki/*",
             "https://qiita.com/*"
           ],
-          "js":["src/jquery-3.6.0.min.js","src/bootstrap.min.js","src/font-awesome-webpack.js","src/jsframe.js","src/main.js"],
+          "js":["src/jquery-3.6.0.min.js","src/bootstrap.min.js","src/font-awesome-webpack.js","src/jsframe.js","src/md5.js","src/main.js"],
             "css":["css/mmob.css","css/bootstrap.min.css"]
         }
     ],

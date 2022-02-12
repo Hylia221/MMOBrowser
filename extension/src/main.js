@@ -1,4 +1,5 @@
 const MESSAGE_MAX_LENGTH = 50;
+const UPDATE_WORLDINFO_INTERVAL = 5000;
 var mouseX = 0;
 var mouseY = 0;
 var mouseMoved = false;
@@ -12,7 +13,7 @@ loadInitialStateOfWindow();
 // 自カーソル位置の送信
 var requestUserInfoIntervalFunc = setInterval(function(){
   if(mouseMoved){
-    chrome.runtime.sendMessage({ type: "updateUserInfo", my_x: mouseX, my_y: mouseY }, function (response) {
+    chrome.runtime.sendMessage({ type: "updateUserInfo", title:document.title, my_x: mouseX, my_y: mouseY}, function (response) {
       return true;
     });
     mouseMoved = false;
@@ -21,7 +22,7 @@ var requestUserInfoIntervalFunc = setInterval(function(){
 
 // 初回更新
 $(document).ready(function () {
-  chrome.runtime.sendMessage({ type: "updateUserInfo", my_x: -100, my_y: -100 }, function (response) {
+  chrome.runtime.sendMessage({ type: "updateUserInfo", title:document.title, my_x: -100, my_y: -100 }, function (response) {
     return true;
   });
 });
@@ -175,6 +176,7 @@ $("#mmob-my-message").keydown(function (event) {
   }
 });
 
+// ***************ウィンドウ定義**********************
 // チャットウィンドウの生成
 function createMMOBChatWindow() {
   const mmobChatWindowInnerHTML = `
@@ -309,10 +311,9 @@ function mmobChatWindowAppearance(apr) {
 
 // ワールド情報表示ウィンドウの生成
 function createMMOBWorldInfoWindow() {
-  //     <div id="mmobworldinfo-box" class="mmobworldinfo-box">ワールド情報</div><table class="table">
   const mmobWorldInfoWindowInnerHTML = `
-    <div class="overflow-auto" style="margin-left:auto; margin-right: auto; height:90%">
-    <table class="table table-sm mmob-worldtable overflow-auto">
+    <div class="overflow-auto mmob-worldinfo" style="">
+    <table class="table table-sm">
     <thead class="thead-dark">
       <tr>
           <th class="text-center" style="width: 30px;"></th>
@@ -320,63 +321,8 @@ function createMMOBWorldInfoWindow() {
           <th class="text-center" style="width: 60px;">接続数</th>
       </tr>
   </thead>
-  <tbody>
-      <tr data-toggle="collapse" data-target="#employeeList1">
-          <td class="text-center">\u2795</td>
-          <td>qiita.com</td>
-          <td class="text-center">3</td>
-      </tr>
-      <tr>
-          <td class="p-0"></td>
-          <td colspan="2" class="p-0">
-              <div id="employeeList1" class="collapse">
-                  <table class="table thead-dark">
-                      <tbody>
-                          <tr>
-                              <td>1</td>
-                              <!-- <td>https://qiita.com/yoshii0110/items/88b50a72155988fea05e</td> -->
-                              <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
-                              <td class="text-center" style="width: 60px;">5</td>
-                          </tr>
-                          <tr>
-                              <td>2</td>
-                              <!-- <td>yoshii0110/items/88b50a72155988fea05e</td> -->
-                              <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
-                              <td class="text-center" style="width: 60px;">5</td>
-                          </tr>
-                      </tbody>
-                  </table>
-              </div>
-          </td>
-      </tr>
-      <tr data-toggle="collapse" data-target="#employeeList2">
-          <td class="text-center">\u2795</td>
-          <td>wikipedia.org</td>
-          <td class="text-center">3</td>
-      </tr>
-      <tr>
-          <td class="p-0"></td>
-          <td colspan="2" class="p-0">
-              <div id="employeeList2" class="collapse">
-                  <table class="table thead-dark">
-                      <tbody>
-                          <tr>
-                              <td>1</td>
-                              <!-- <td>https://qiita.com/yoshii0110/items/88b50a72155988fea05e</td> -->
-                              <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
-                              <td class="text-center" style="width: 60px;">5</td>
-                          </tr>
-                          <tr>
-                              <td>2</td>
-                              <!-- <td>yoshii0110/items/88b50a72155988fea05e</td> -->
-                              <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
-                              <td class="text-center" style="width: 60px;">5</td>
-                          </tr>
-                      </tbody>
-                  </table>
-              </div>
-          </td>
-      </tr>
+  <tbody id="mmob-worldinfo-tr">
+
   </tbody>
   </table>
   </div>
@@ -415,18 +361,61 @@ function createMMOBWorldInfoWindow() {
     chrome.storage.sync.set({ isWorldInfoWindowMinimized: false });
   });
 
-  function getWorldInfo(){
+  function updateWorldInfo(){
     var request = new XMLHttpRequest();
-    request.open('GET', 'http://localhost:3000/api/locationInfo', true);
+    request.open('GET', 'http://localhost:3000/api/worldInfo', true);
     request.responseType = 'json';
     request.onload = function () {
-      var data = this.response;
-      console.log(data);
-      $("#mmobworldinfo-box").text(data);
+      let tbodyStr = "";
+      let data = this.response;
+      // console.log(data);
+      let trID = 0;
+      for(let world in data){
+        console.log(world);
+        let worldId = CybozuLabs.MD5.calc(world, CybozuLabs.MD5.BY_UTF16);
+        // ワールドに関する情報を出力
+        let worldStr=`
+          <tr id="mmob-worldid-${worldId}" data-toggle="collapse" data-target="#mmob-worldcollapse-${worldId}">
+          <td class="text-center">\u2795</td>
+          <td>${world}</td>
+          <td class="text-center">${data[world]["connections"]}</td>
+          </tr>`;
+
+        // ロケーションに関する情報を表示
+        let locationStr = `
+        <tr>
+        <td class="p-0"></td>
+        <td colspan="2" class="p-0">
+            <div id="mmob-worldcollapse-${worldId}" class="collapse">
+                <table class="table thead-dark">
+                    <tbody>
+        `;
+        for(let location in data[world]["locations"]){
+          locationStr += `
+          <tr>
+          <td class="text-center" style="width: 30px;">\u2022</td>
+          <td>${data[world]["locations"][location]["title"]}</td>
+          <td class="text-center" style="width: 60px;">${data[world]["locations"][location]["connections"]}</td>
+          </tr>
+          <tr>
+          `;      
+        }
+        locationStr += `
+          </tbody>
+          </table>
+          </div>
+          </td>
+          </tr>`;
+        tbodyStr += worldStr;
+        tbodyStr += locationStr;
+        trID += 1;
+      }
+      $("#mmob-worldinfo-tr").empty();
+      $("#mmob-worldinfo-tr").append(tbodyStr);
     };
     request.send();
   }
-  setInterval(getWorldInfo,5000);
+  setInterval(updateWorldInfo,UPDATE_WORLDINFO_INTERVAL);
 
 
   // 移動時にPositionを保存
@@ -540,6 +529,7 @@ function loadInitialStateOfWindow(){
 }
 
 
+// ***************Utils*******************
 function escapeHTML(string){
   return string.replace(/&/g, '&lt;')
   .replace(/</g, '&lt;')
@@ -547,3 +537,76 @@ function escapeHTML(string){
   .replace(/"/g, '&quot;')
   .replace(/'/g, "&#x27;");
 }
+
+
+const mmobWorldInfoWindowInnerHTML = `
+<div class="overflow-auto mmob-worldinfo" style="">
+<table class="table table-sm">
+<thead class="thead-dark">
+  <tr>
+      <th class="text-center" style="width: 30px;"></th>
+      <th class="text-center">ワールド名</th>
+      <th class="text-center" style="width: 60px;">接続数</th>
+  </tr>
+</thead>
+<tbody>
+  <tr data-toggle="collapse" data-target="#employeeList1">
+      <td class="text-center">\u2795</td>
+      <td>qiita.com</td>
+      <td class="text-center">3</td>
+  </tr>
+  <tr>
+      <td class="p-0"></td>
+      <td colspan="2" class="p-0">
+          <div id="employeeList1" class="collapse">
+              <table class="table thead-dark">
+                  <tbody>
+                      <tr>
+                          <td>1</td>
+                          <!-- <td>https://qiita.com/yoshii0110/items/88b50a72155988fea05e</td> -->
+                          <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
+                          <td class="text-center" style="width: 60px;">5</td>
+                      </tr>
+                      <tr>
+                          <td>2</td>
+                          <!-- <td>yoshii0110/items/88b50a72155988fea05e</td> -->
+                          <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
+                          <td class="text-center" style="width: 60px;">5</td>
+                      </tr>
+                  </tbody>
+              </table>
+          </div>
+      </td>
+  </tr>
+  <tr data-toggle="collapse" data-target="#employeeList2">
+      <td class="text-center">\u2795</td>
+      <td>wikipedia.org</td>
+      <td class="text-center">3</td>
+  </tr>
+  <tr>
+      <td class="p-0"></td>
+      <td colspan="2" class="p-0">
+          <div id="employeeList2" class="collapse">
+              <table class="table thead-dark">
+                  <tbody>
+                      <tr>
+                          <td>1</td>
+                          <!-- <td>https://qiita.com/yoshii0110/items/88b50a72155988fea05e</td> -->
+                          <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
+                          <td class="text-center" style="width: 60px;">5</td>
+                      </tr>
+                      <tr>
+                          <td>2</td>
+                          <!-- <td>yoshii0110/items/88b50a72155988fea05e</td> -->
+                          <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
+                          <td class="text-center" style="width: 60px;">5</td>
+                      </tr>
+                  </tbody>
+              </table>
+          </div>
+      </td>
+  </tr>
+</tbody>
+</table>
+</div>
+`;
