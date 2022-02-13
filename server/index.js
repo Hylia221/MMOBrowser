@@ -62,7 +62,7 @@ const PORT = process.env.PORT || 3000;
 
 httpServer.listen(PORT, () =>
   console.log(`server listening at http://localhost:${PORT}`)
-  );
+);
 
 // 全てのユーザに画面更新用の情報を送信(最大60FPS)
 function updateUserInfo(){
@@ -94,7 +94,7 @@ function updateUserInfo(){
 executePeriodically(updateUserInfo, UPDATE_USERINFO_INTERVAL);
 
 // *****************API**********************
-const UPDATE_API_INFO_INTERVAL = 5000;
+const UPDATE_API_INFO_INTERVAL = 1000;
 let connections = {"connections":0};
 let worldInfo = {};
 
@@ -177,4 +177,5 @@ function TEST_addDB(){
     USER_INFO_DB[id] = {"userID":id, "username":`Player${id}`, "cursorColor":"#ffffff", "location":`https://qiita.com/`, "title":"メインページ", x:100, y:i*10+100};
   }
 }
-TEST_addDB();
+
+// TEST_addDB();

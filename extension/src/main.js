@@ -1,5 +1,6 @@
 const MESSAGE_MAX_LENGTH = 50;
 const UPDATE_WORLDINFO_INTERVAL = 5000;
+const SEND_USERINFO_INTERVAL = 16;
 var mouseX = 0;
 var mouseY = 0;
 var mouseMoved = false;
@@ -10,15 +11,18 @@ const worldInfoWindow = createMMOBWorldInfoWindow();
 // 保存された情報に基づいてウインドウの初期状態をロード
 loadInitialStateOfWindow();
 
+// 定期実行する関数
+executePeriodically(sendUserInfo,SEND_USERINFO_INTERVAL);
+
 // 自カーソル位置の送信
-var requestUserInfoIntervalFunc = setInterval(function(){
+function sendUserInfo(){
   if(mouseMoved){
     chrome.runtime.sendMessage({ type: "updateUserInfo", title:document.title, my_x: mouseX, my_y: mouseY}, function (response) {
       return true;
     });
     mouseMoved = false;
   }
-}, 16);
+}
 
 // 初回更新
 $(document).ready(function () {
@@ -149,6 +153,16 @@ chrome.runtime.onMessage.addListener(
     return true;
   });
 
+// エンターキーでメッセージ送信
+$("#mmob-my-message").keydown(function (event) {
+  if (event.keyCode == 13) {
+    var cnt = $('#mmob-my-message').val().length;
+    if(cnt > 0 && cnt < MESSAGE_MAX_LENGTH){
+      $("#mmob-send-button").click();
+    }
+  }
+});
+
 // チャットウインドウの表示(キーボードショットカット)
 // window.addEventListener("keydown", function (event) {
 //   if (event.ctrlKey && event.code == "KeyI") {
@@ -166,31 +180,23 @@ chrome.runtime.onMessage.addListener(
 //   }
 // }, true);
 
-// エンターキーでメッセージ送信
-$("#mmob-my-message").keydown(function (event) {
-  if (event.keyCode == 13) {
-    var cnt = $('#mmob-my-message').val().length;
-    if(cnt > 0 && cnt < MESSAGE_MAX_LENGTH){
-      $("#mmob-send-button").click();
-    }
-  }
-});
 
 // ***************ウィンドウ定義**********************
 // チャットウィンドウの生成
 function createMMOBChatWindow() {
   const mmobChatWindowInnerHTML = `
     <div id="mmobchat-box" class="mmobchat-box"></div>
-    <form id="mmob-send-form" onsubmit="return false;">
+    <form id="mmob-send-form" style="position:absolute; bottom:0;" onsubmit="return false;">
       <input type="text" id="mmob-my-message" placeholder="メッセージ（50文字以内）" autofocus/>
       <button id="mmob-send-button" type="button" disabled>送信</button>
     </form>
     `;
-  const jsFrame = new JSFrame({parentElement:document.body});
+  // const jsFrame = new JSFrame({fixed:true,parentElement:document.body});
+  const jsFrame = new JSFrame();
   const appearance = jsFrame.createFrameAppearance();
   const chatWindow = jsFrame.create({
     title: 'mmobchat-window',
-    title: 'MMOB Chat',
+    title: 'MMOB チャット',
     left: 20, top: 20, width: 320, height: 220,
     style: {
       backgroundColor: 'rgba(255,255,255,0.9)',
@@ -242,7 +248,7 @@ function createMMOBChatWindow() {
 
   // 移動時にPositionを保存
   let chatWindowTimeoutMoveID;
-  let chatWindowTimeoutMoveDelay = 100;
+  let chatWindowTimeoutMoveDelay = 200;
   chatWindow.on('frame', 'move', (data)=>{
     if(chatWindowTimeoutMoveID){return};
     chatWindowTimeoutMoveID = setTimeout(()=>{
@@ -253,11 +259,10 @@ function createMMOBChatWindow() {
 
   // リサイズ時にsizeを保存
   let chatWindowTimeoutResizeID;
-  let chatWindowTimeoutResizeDelay = 100;
+  let chatWindowTimeoutResizeDelay = 200;
   chatWindow.on('frame', 'resize', (data)=>{
     if(chatWindowTimeoutResizeID){return};
     chatWindowTimeoutResizeID = setTimeout(()=>{
-      console.log(data.size);
       chatWindowTimeoutResizeID = 0;
       chrome.storage.sync.set({ chatWindowSize: data.size });
     },chatWindowTimeoutResizeDelay);
@@ -321,13 +326,14 @@ function createMMOBWorldInfoWindow() {
           <th class="text-center" style="width: 60px;">接続数</th>
       </tr>
   </thead>
-  <tbody id="mmob-worldinfo-tr">
+  <tbody id="mmob-worldinfo-table">
 
   </tbody>
   </table>
   </div>
     `;
-  const jsFrame = new JSFrame({parentElement:document.body});
+  // const jsFrame = new JSFrame({parentElement:document.body});
+  const jsFrame = new JSFrame();
   const appearance = jsFrame.createFrameAppearance();
   const worldInfoWindow = jsFrame.create({
     title: 'mmobworldinfo-window',
@@ -361,66 +367,113 @@ function createMMOBWorldInfoWindow() {
     chrome.storage.sync.set({ isWorldInfoWindowMinimized: false });
   });
 
+  // ワールド情報を更新する
   function updateWorldInfo(){
     var request = new XMLHttpRequest();
     request.open('GET', 'http://localhost:3000/api/worldInfo', true);
     request.responseType = 'json';
     request.onload = function () {
-      let tbodyStr = "";
       let data = this.response;
-      // console.log(data);
-      let trID = 0;
-      for(let world in data){
-        console.log(world);
-        let worldId = CybozuLabs.MD5.calc(world, CybozuLabs.MD5.BY_UTF16);
-        // ワールドに関する情報を出力
-        let worldStr=`
-          <tr id="mmob-worldid-${worldId}" data-toggle="collapse" data-target="#mmob-worldcollapse-${worldId}">
-          <td class="text-center">\u2795</td>
-          <td>${world}</td>
-          <td class="text-center">${data[world]["connections"]}</td>
-          </tr>`;
 
-        // ロケーションに関する情報を表示
-        let locationStr = `
-        <tr>
-        <td class="p-0"></td>
-        <td colspan="2" class="p-0">
-            <div id="mmob-worldcollapse-${worldId}" class="collapse">
-                <table class="table thead-dark">
-                    <tbody>
-        `;
+      // データが来ないワールド情報を消す
+      let worldIdList = [];
+      let locationIdList = [];
+      for(let world in data){
+        worldIdList.push(CybozuLabs.MD5.calc(world, CybozuLabs.MD5.BY_UTF16));
         for(let location in data[world]["locations"]){
-          locationStr += `
-          <tr>
-          <td class="text-center" style="width: 30px;">\u2022</td>
-          <td>${data[world]["locations"][location]["title"]}</td>
-          <td class="text-center" style="width: 60px;">${data[world]["locations"][location]["connections"]}</td>
-          </tr>
-          <tr>
-          `;      
-        }
-        locationStr += `
-          </tbody>
-          </table>
-          </div>
-          </td>
-          </tr>`;
-        tbodyStr += worldStr;
-        tbodyStr += locationStr;
-        trID += 1;
+          locationIdList.push(CybozuLabs.MD5.calc(location, CybozuLabs.MD5.BY_UTF16));
+        }        
       }
-      $("#mmob-worldinfo-tr").empty();
-      $("#mmob-worldinfo-tr").append(tbodyStr);
+      // ワールドを消す
+      $('.mmob-worldinfo-world').each(function (index, element) {
+        let tmp = $(element).attr('id').split("-");
+        let showedWorldId = tmp[tmp.length - 1];
+        if (!worldIdList.includes(showedWorldId)) {
+          $(`#mmob-worldid-${showedWorldId}`).remove();
+          $(`#mmob-worldid-${showedWorldId}-locations`).remove();
+        }
+      });
+      // ロケーションを消す
+      $('.mmob-worldinfo-location').each(function (index, element) {
+        let tmp = $(element).attr('id').split("-");
+        let showedLocationId = tmp[tmp.length - 1];
+        if (!locationIdList.includes(showedLocationId)) {
+          $(`#mmob-locationid-${showedLocationId}`).remove();
+        }
+      });
+
+      // ワールド情報の更新
+      for(let world in data){
+        let worldId = CybozuLabs.MD5.calc(world, CybozuLabs.MD5.BY_UTF16);
+        if($(`#mmob-worldid-${worldId}`).length){
+          // 既にあるワールドの場合
+          $(`#mmob-worldid-${worldId}-connections`).text(data[world]["connections"]);
+          for(let location in data[world]["locations"]){
+            let locationId = CybozuLabs.MD5.calc(location, CybozuLabs.MD5.BY_UTF16);
+            if($(`#mmob-locationid-${locationId}`).length){
+              // 既にあるロケーションの場合は更新
+              $(`#mmob-locationid-${locationId}-connections`).text(escapeHTML(data[world]["locations"][location]["connections"]));
+            }else{
+              // 新しいロケーションの場合は追加
+              let locationStr = `
+                <tr id="mmob-locationid-${locationId}" class="mmob-worldinfo-location">
+                  <td class="text-center" style="width: 30px;">\u2022</td>
+                  <td>
+                  <a href="${escapeHTML(location)}">${escapeHTML(data[world]["locations"][location]["title"])}</a>
+                  </td>
+                  <td id="mmob-locationid-${locationId}-connections" class="text-center" style="width: 60px;">${escapeHTML(data[world]["locations"][location]["connections"])}</td>
+                </tr>
+              `;
+              $(`#mmob-worldid-${worldId}-locations-tbody`).append(locationStr); 
+            }
+          }
+        }else{
+          // 新しいワールドの場合
+          // 新しいワールドに関する情報を追加
+          let worldStr=`
+            <tr id="mmob-worldid-${worldId}" class="mmob-worldinfo-world" data-toggle="collapse" data-target="#mmob-worldcollapse-${worldId}">
+            <td class="text-center">\u2795</td>
+            <td>${escapeHTML(world)}</td>
+            <td id="mmob-worldid-${worldId}-connections" class="text-center">${escapeHTML(data[world]["connections"])}</td>
+            </tr>`;
+          
+          // 新しいロケーションに関する情報を追加
+          let locationStr = `
+            <tr id="mmob-worldid-${worldId}-locations">
+              <td class="p-0"></td>
+              <td colspan="2" class="p-0">
+              <div id="mmob-worldcollapse-${worldId}" class="collapse">
+              <table class="table thead-dark">
+              <tbody id="mmob-worldid-${worldId}-locations-tbody">`;
+          for(let location in data[world]["locations"]){
+              let locationId = CybozuLabs.MD5.calc(location, CybozuLabs.MD5.BY_UTF16);
+              locationStr += `
+              <tr id="mmob-locationid-${locationId}" class="mmob-worldinfo-location">
+                <td class="text-center" style="width: 30px;">\u2022</td>
+                <td>
+                <a href="${escapeHTML(location)}">${escapeHTML(data[world]["locations"][location]["title"])}</a>
+                </td>
+                <td id="mmob-locationid-${locationId}-connections" class="text-center" style="width: 60px;">${escapeHTML(data[world]["locations"][location]["connections"])}</td>
+              </tr>
+              `;  
+          }
+          locationStr += `
+              </tbody>
+              </table>
+              </div>
+              </td>
+            </tr>`;
+          $("#mmob-worldinfo-table").append(worldStr+locationStr);
+        }
+      }
     };
     request.send();
   }
-  setInterval(updateWorldInfo,UPDATE_WORLDINFO_INTERVAL);
-
+  executePeriodically(updateWorldInfo,UPDATE_WORLDINFO_INTERVAL);
 
   // 移動時にPositionを保存
   let timeoutMoveID;
-  let timeoutMoveDelay = 100;
+  let timeoutMoveDelay = 200;
   worldInfoWindow.on('frame', 'move', (data)=>{
     if(timeoutMoveID){return};
     timeoutMoveID = setTimeout(()=>{
@@ -431,7 +484,7 @@ function createMMOBWorldInfoWindow() {
 
   // リサイズ時にsizeを保存
   let timeoutResizeID;
-  let timeoutResizeDelay = 100;
+  let timeoutResizeDelay = 200;
   worldInfoWindow.on('frame', 'resize', (data)=>{
     if(timeoutResizeID){return};
     timeoutResizeID = setTimeout(()=>{
@@ -487,7 +540,6 @@ function mmobWorldInfoWindowAppearance(apr) {
   return apr;
 }
 
-
 // ウィンドウの初期状態ロード
 function loadInitialStateOfWindow(){
   chrome.storage.sync.get(['isConnected', 'isChatWindowShown', 'isChatWindowMinimized', 'chatWindowPos', 'chatWindowSize', 'isWorldInfoWindowShown', 'isWorldInfoWindowMinimized', 'worldInfoWindowPos', 'worldInfoWindowSize'], function (data) {
@@ -531,6 +583,7 @@ function loadInitialStateOfWindow(){
 
 // ***************Utils*******************
 function escapeHTML(string){
+  string = String(string);
   return string.replace(/&/g, '&lt;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
@@ -538,75 +591,12 @@ function escapeHTML(string){
   .replace(/'/g, "&#x27;");
 }
 
-
-const mmobWorldInfoWindowInnerHTML = `
-<div class="overflow-auto mmob-worldinfo" style="">
-<table class="table table-sm">
-<thead class="thead-dark">
-  <tr>
-      <th class="text-center" style="width: 30px;"></th>
-      <th class="text-center">ワールド名</th>
-      <th class="text-center" style="width: 60px;">接続数</th>
-  </tr>
-</thead>
-<tbody>
-  <tr data-toggle="collapse" data-target="#employeeList1">
-      <td class="text-center">\u2795</td>
-      <td>qiita.com</td>
-      <td class="text-center">3</td>
-  </tr>
-  <tr>
-      <td class="p-0"></td>
-      <td colspan="2" class="p-0">
-          <div id="employeeList1" class="collapse">
-              <table class="table thead-dark">
-                  <tbody>
-                      <tr>
-                          <td>1</td>
-                          <!-- <td>https://qiita.com/yoshii0110/items/88b50a72155988fea05e</td> -->
-                          <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
-                          <td class="text-center" style="width: 60px;">5</td>
-                      </tr>
-                      <tr>
-                          <td>2</td>
-                          <!-- <td>yoshii0110/items/88b50a72155988fea05e</td> -->
-                          <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
-                          <td class="text-center" style="width: 60px;">5</td>
-                      </tr>
-                  </tbody>
-              </table>
-          </div>
-      </td>
-  </tr>
-  <tr data-toggle="collapse" data-target="#employeeList2">
-      <td class="text-center">\u2795</td>
-      <td>wikipedia.org</td>
-      <td class="text-center">3</td>
-  </tr>
-  <tr>
-      <td class="p-0"></td>
-      <td colspan="2" class="p-0">
-          <div id="employeeList2" class="collapse">
-              <table class="table thead-dark">
-                  <tbody>
-                      <tr>
-                          <td>1</td>
-                          <!-- <td>https://qiita.com/yoshii0110/items/88b50a72155988fea05e</td> -->
-                          <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
-                          <td class="text-center" style="width: 60px;">5</td>
-                      </tr>
-                      <tr>
-                          <td>2</td>
-                          <!-- <td>yoshii0110/items/88b50a72155988fea05e</td> -->
-                          <td>会社のtechポータルをなぜ作ったのか。「KDDI Engineer Portal」公開までの道のり</td>
-                          <td class="text-center" style="width: 60px;">5</td>
-                      </tr>
-                  </tbody>
-              </table>
-          </div>
-      </td>
-  </tr>
-</tbody>
-</table>
-</div>
-`;
+// 定期的な間隔[ms]で関数を実行。関数の実行時間が指定した間隔を超える場合は関数終了後に即実行
+function executePeriodically(fn, interval){
+  const startTime = performance.now(); // 開始時間
+  fn();
+  const endTime = performance.now(); // 終了時間
+  let delay = interval - (endTime - startTime);
+  delay = delay > 0 ? Math.round(delay):0;
+  setTimeout(executePeriodically,delay,fn,interval);
+}

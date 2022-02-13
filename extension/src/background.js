@@ -20,6 +20,8 @@ chrome.runtime.onMessage.addListener(
     if (request.type == "login") {
       username = request.username;
       cursorColor = request.cursorColor;
+      let manifestData = chrome.runtime.getManifest();
+      let version = manifestData.version;
       socket.auth = { username };
       socket.connect();
       chrome.storage.sync.set({ isConnected: true });

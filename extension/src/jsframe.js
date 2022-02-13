@@ -3506,7 +3506,7 @@ function JSFrame(model) {
       var topParentDiv = document.createElement('div');
       topParentDiv.id = 'jsFrame_fixed_' + me.generateUUID();
       topParentDiv.setAttribute('style',
-        'position:fixed;' + me.hAlign + ':0px;' + me.vAlign + ':0px;margin:0px;padding:0px;'
+        'position:fixed;' + me.hAlign + ':0px;' + me.vAlign + ':0px;margin:0px;padding:0px;z-index:10000;'
       );
       document.body.appendChild(topParentDiv);
       parentElement = topParentDiv;
