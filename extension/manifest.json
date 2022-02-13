@@ -1,7 +1,7 @@
 {
     "name": "mmobrowser",
     "description" : "mmobrowser",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "manifest_version": 2,
     "permissions": ["tabs","storage"],    
     "browser_action": {

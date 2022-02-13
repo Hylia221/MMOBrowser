@@ -1,4 +1,4 @@
-const MESSAGE_MAX_LENGTH = 140;
+const MESSAGE_MAX_LENGTH = 100;
 const UPDATE_WORLDINFO_INTERVAL = 5000;
 const SEND_USERINFO_INTERVAL = 16;
 var mouseX = 0;
@@ -187,7 +187,7 @@ function createMMOBChatWindow() {
   const mmobChatWindowInnerHTML = `
     <div id="mmobchat-box" class="mmobchat-box"></div>
     <form id="mmob-send-form" style="position:absolute; bottom:0;" onsubmit="return false;">
-      <input type="text" id="mmob-my-message" placeholder="メッセージ（50文字以内）" autofocus/>
+      <input type="text" id="mmob-my-message" placeholder="メッセージ（100文字以内）" autofocus/>
       <button id="mmob-send-button" type="button" disabled>送信</button>
     </form>
     `;
@@ -488,7 +488,6 @@ function createMMOBWorldInfoWindow() {
   worldInfoWindow.on('frame', 'resize', (data)=>{
     if(timeoutResizeID){return};
     timeoutResizeID = setTimeout(()=>{
-      console.log(data.size);
       timeoutResizeID = 0;
       chrome.storage.sync.set({ worldInfoWindowSize: data.size });
     },timeoutResizeDelay);
@@ -557,7 +556,6 @@ function loadInitialStateOfWindow(){
         if (data.isChatWindowMinimized) {
           chatWindow.control.doCommand('minimize');
         }
-        console.log("chatWindow");
         chatWindow.show();
       }
       if(data.isWorldInfoWindowShown){
@@ -573,7 +571,6 @@ function loadInitialStateOfWindow(){
         if (data.isWorldInfoWindowMinimized) {
           worldInfoWindow.control.doCommand('minimize');
         }
-        console.log("worldInfoWindow");
         worldInfoWindow.show();        
       }
     }

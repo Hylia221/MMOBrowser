@@ -1,9 +1,11 @@
 .mmobspeech-balloon {
 	position: relative;
 	background: #ffffff;
-	border: 1px solid #000000;
-  border-radius: 3px;
-  box-shadow: 1px 3px 7px 0px #666666;
+  	border: 1px solid #000000;
+  	border-radius: 3px;
+  	box-shadow: 1px 3px 7px 0px #666666;
+	/* max-width: 300px;
+	box-sizing: border-box; */
 }
 .mmobspeech-balloon:after, .mmobspeech-balloon:before {
 	top: 100%;
