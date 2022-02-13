@@ -1,4 +1,4 @@
-const MESSAGE_MAX_LENGTH = 50;
+const MESSAGE_MAX_LENGTH = 140;
 const UPDATE_WORLDINFO_INTERVAL = 5000;
 const SEND_USERINFO_INTERVAL = 16;
 var mouseX = 0;
@@ -132,7 +132,7 @@ chrome.runtime.onMessage.addListener(
       // メッセージの受信
       var userID = escapeHTML(request.userID);
       var username = escapeHTML(request.username);
-      var message = escapeHTML(request.message);
+      var message = autoLink(escapeHTML(request.message));
       const msg = username + ":" + message;
       $("#mmobchat-box").append(msg + "<br/>");
       $("#mmobchat-box").scrollTop($("#mmobchat-box")[0].scrollHeight);
@@ -599,4 +599,13 @@ function executePeriodically(fn, interval){
   let delay = interval - (endTime - startTime);
   delay = delay > 0 ? Math.round(delay):0;
   setTimeout(executePeriodically,delay,fn,interval);
+}
+
+// 文字列に含まれるURLを<a>にする
+function autoLink(str) {
+  let regexp_url = /((h?)(ttps?:\/\/[a-zA-Z0-9.\-_@:/~?%&;=+#',()*!]+))/g; // ']))/;
+  let regexp_makeLink = function(all, url, h, href) {
+      return '<a href="h' + href + '">' + url + '</a>';
+  }
+  return str.replace(regexp_url, regexp_makeLink);
 }
