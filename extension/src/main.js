@@ -1,3 +1,5 @@
+// const SERVER_ADDR = "http://3.19.79.227:3001";
+const SERVER_ADDR = "https://mmobrowser.tk";
 const MESSAGE_MAX_LENGTH = 100;
 const UPDATE_WORLDINFO_INTERVAL = 5000;
 const SEND_USERINFO_INTERVAL = 16;
@@ -370,7 +372,7 @@ function createMMOBWorldInfoWindow() {
   // ワールド情報を更新する
   function updateWorldInfo(){
     var request = new XMLHttpRequest();
-    request.open('GET', 'http://localhost:3000/api/worldInfo', true);
+    request.open('GET', `${SERVER_ADDR}/api/worldInfo`, true);
     request.responseType = 'json';
     request.onload = function () {
       let data = this.response;

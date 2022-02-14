@@ -8,6 +8,8 @@ const io = require('socket.io')(httpServer);
 const { performance } = require('perf_hooks');
 const randomID = () => crypto.randomBytes(8).toString("hex");
 const UPDATE_USERINFO_INTERVAL = 16;
+const PORT = 80; //3000:本番、3001:テスト
+
 let USER_INFO_DB={};
 
 // *****************mmobメイン処理**********************
@@ -58,11 +60,10 @@ io.on("connection",(socket) =>{
   });
 });
 
-const PORT = process.env.PORT || 3000;
-
-httpServer.listen(PORT, () =>
+httpServer.listen(PORT, () =>{
+  process.setuid(501); 
   console.log(`server listening at http://localhost:${PORT}`)
-);
+});
 
 // 全てのユーザに画面更新用の情報を送信(最大60FPS)
 function updateUserInfo(){
@@ -97,6 +98,11 @@ executePeriodically(updateUserInfo, UPDATE_USERINFO_INTERVAL);
 const UPDATE_API_INFO_INTERVAL = 1000;
 let connections = {"connections":0};
 let worldInfo = {};
+
+// index.html
+app.get("/", function (request, response) {
+  response.send('<h1>Welcome to MMOBrowser</h1>');
+});
 
 // 現在の接続数
 app.get("/api/connections", function (request, response) {

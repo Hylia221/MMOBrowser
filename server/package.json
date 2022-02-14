@@ -1,13 +1,13 @@
 {
   "name": "mmob",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "mmobrowser",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
-  "author": "Hylia",
+  "author": "Hylia221",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",

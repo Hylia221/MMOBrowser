@@ -1,6 +1,8 @@
 // const URL = "http://3.19.79.227:3000";
-const URL = "http://localhost:3000";
-const socket = io(URL, { autoConnect: false, transports: ['websocket', 'polling', 'flashsocket'] });
+// const SERVER_ADDR = "http://3.19.79.227:3001";
+const SERVER_ADDR = "https://mmobrowser.tk";
+// const URL = "http://localhost:3000";
+const socket = io(SERVER_ADDR, { autoConnect: false, transports: ['websocket', 'polling', 'flashsocket'] });
 var username = "";
 var cursorColor = "#FFFFFF";
 var requestUserInfoIntervalFunc;

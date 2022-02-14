@@ -1,3 +1,4 @@
+const SERVER_ADDR = "https://mmobrowser.tk";
 const USERNAME_MAXLENGTH = 16;
 
 chrome.storage.sync.get('isConnected', function (data) {
@@ -141,7 +142,7 @@ function showWorldInfoWindow() {
 
 function getConnections(){
     var request = new XMLHttpRequest();
-    request.open('GET', 'http://localhost:3000/api/connections', true);
+    request.open('GET', `${SERVER_ADDR}/api/connections`, true);
     request.responseType = 'json';
     request.onload = function () {
       var data = this.response;
