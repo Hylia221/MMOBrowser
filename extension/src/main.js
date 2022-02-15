@@ -13,8 +13,9 @@ const worldInfoWindow = createMMOBWorldInfoWindow();
 // 保存された情報に基づいてウインドウの初期状態をロード
 loadInitialStateOfWindow();
 
-// 定期実行する関数
-executePeriodically(sendUserInfo,SEND_USERINFO_INTERVAL);
+// 定期実行関数の起動
+executePeriodically(sendUserInfo, SEND_USERINFO_INTERVAL);
+executePeriodically(updateWorldInfo,UPDATE_WORLDINFO_INTERVAL);
 
 // 自カーソル位置の送信
 function sendUserInfo(){
@@ -45,14 +46,19 @@ $(function () {
 // リスナーイベントの実行
 chrome.runtime.onMessage.addListener(
   (request, sender, sendResponse) => {
-    if (request.type === "showChatWindow") {
+    if (request.type == "login") {
+      // ログイン処理
+      sendResponse({});
+    }else if (request.type === "showChatWindow") {
       // チャットウィンドウを表示する
       chatWindow.show();
       chrome.storage.sync.set({ isChatWindowShown: true });
+      sendResponse({});
     } else if (request.type === "showWorldInfoWindow") {
       // ワールド情報ウィンドウを表示する
       worldInfoWindow.show();
       chrome.storage.sync.set({ isWorldInfoWindowShown: true });
+      sendResponse({});
     } else if (request.type === "updateUserInfo") {
       // データが来ないカーソルを消す
       var newIdList = [];
@@ -339,7 +345,7 @@ function createMMOBWorldInfoWindow() {
   const appearance = jsFrame.createFrameAppearance();
   const worldInfoWindow = jsFrame.create({
     title: 'mmobworldinfo-window',
-    title: 'MMOB ワールド情報',
+    title: 'MMOB ワールド情報(5秒毎に更新)',
     left: 350, top: 20, width: 320, height: 220,
     style: {
       backgroundColor: 'rgba(255,255,255,0.9)',
@@ -368,110 +374,6 @@ function createMMOBWorldInfoWindow() {
   worldInfoWindow.control.on('deminimized', (frame, info) => {
     chrome.storage.sync.set({ isWorldInfoWindowMinimized: false });
   });
-
-  // ワールド情報を更新する
-  function updateWorldInfo(){
-    var request = new XMLHttpRequest();
-    request.open('GET', `${SERVER_ADDR}/api/worldInfo`, true);
-    request.responseType = 'json';
-    request.onload = function () {
-      let data = this.response;
-
-      // データが来ないワールド情報を消す
-      let worldIdList = [];
-      let locationIdList = [];
-      for(let world in data){
-        worldIdList.push(CybozuLabs.MD5.calc(world, CybozuLabs.MD5.BY_UTF16));
-        for(let location in data[world]["locations"]){
-          locationIdList.push(CybozuLabs.MD5.calc(location, CybozuLabs.MD5.BY_UTF16));
-        }        
-      }
-      // ワールドを消す
-      $('.mmob-worldinfo-world').each(function (index, element) {
-        let tmp = $(element).attr('id').split("-");
-        let showedWorldId = tmp[tmp.length - 1];
-        if (!worldIdList.includes(showedWorldId)) {
-          $(`#mmob-worldid-${showedWorldId}`).remove();
-          $(`#mmob-worldid-${showedWorldId}-locations`).remove();
-        }
-      });
-      // ロケーションを消す
-      $('.mmob-worldinfo-location').each(function (index, element) {
-        let tmp = $(element).attr('id').split("-");
-        let showedLocationId = tmp[tmp.length - 1];
-        if (!locationIdList.includes(showedLocationId)) {
-          $(`#mmob-locationid-${showedLocationId}`).remove();
-        }
-      });
-
-      // ワールド情報の更新
-      for(let world in data){
-        let worldId = CybozuLabs.MD5.calc(world, CybozuLabs.MD5.BY_UTF16);
-        if($(`#mmob-worldid-${worldId}`).length){
-          // 既にあるワールドの場合
-          $(`#mmob-worldid-${worldId}-connections`).text(data[world]["connections"]);
-          for(let location in data[world]["locations"]){
-            let locationId = CybozuLabs.MD5.calc(location, CybozuLabs.MD5.BY_UTF16);
-            if($(`#mmob-locationid-${locationId}`).length){
-              // 既にあるロケーションの場合は更新
-              $(`#mmob-locationid-${locationId}-connections`).text(escapeHTML(data[world]["locations"][location]["connections"]));
-            }else{
-              // 新しいロケーションの場合は追加
-              let locationStr = `
-                <tr id="mmob-locationid-${locationId}" class="mmob-worldinfo-location">
-                  <td class="text-center" style="width: 30px;">\u2022</td>
-                  <td>
-                  <a href="${escapeHTML(location)}">${escapeHTML(data[world]["locations"][location]["title"])}</a>
-                  </td>
-                  <td id="mmob-locationid-${locationId}-connections" class="text-center" style="width: 60px;">${escapeHTML(data[world]["locations"][location]["connections"])}</td>
-                </tr>
-              `;
-              $(`#mmob-worldid-${worldId}-locations-tbody`).append(locationStr); 
-            }
-          }
-        }else{
-          // 新しいワールドの場合
-          // 新しいワールドに関する情報を追加
-          let worldStr=`
-            <tr id="mmob-worldid-${worldId}" class="mmob-worldinfo-world" data-toggle="collapse" data-target="#mmob-worldcollapse-${worldId}">
-            <td class="text-center">\u2795</td>
-            <td>${escapeHTML(world)}</td>
-            <td id="mmob-worldid-${worldId}-connections" class="text-center">${escapeHTML(data[world]["connections"])}</td>
-            </tr>`;
-          
-          // 新しいロケーションに関する情報を追加
-          let locationStr = `
-            <tr id="mmob-worldid-${worldId}-locations">
-              <td class="p-0"></td>
-              <td colspan="2" class="p-0">
-              <div id="mmob-worldcollapse-${worldId}" class="collapse">
-              <table class="table thead-dark">
-              <tbody id="mmob-worldid-${worldId}-locations-tbody">`;
-          for(let location in data[world]["locations"]){
-              let locationId = CybozuLabs.MD5.calc(location, CybozuLabs.MD5.BY_UTF16);
-              locationStr += `
-              <tr id="mmob-locationid-${locationId}" class="mmob-worldinfo-location">
-                <td class="text-center" style="width: 30px;">\u2022</td>
-                <td>
-                <a href="${escapeHTML(location)}">${escapeHTML(data[world]["locations"][location]["title"])}</a>
-                </td>
-                <td id="mmob-locationid-${locationId}-connections" class="text-center" style="width: 60px;">${escapeHTML(data[world]["locations"][location]["connections"])}</td>
-              </tr>
-              `;  
-          }
-          locationStr += `
-              </tbody>
-              </table>
-              </div>
-              </td>
-            </tr>`;
-          $("#mmob-worldinfo-table").append(worldStr+locationStr);
-        }
-      }
-    };
-    request.send();
-  }
-  executePeriodically(updateWorldInfo,UPDATE_WORLDINFO_INTERVAL);
 
   // 移動時にPositionを保存
   let timeoutMoveID;
@@ -541,6 +443,108 @@ function mmobWorldInfoWindowAppearance(apr) {
   return apr;
 }
 
+  // ワールド情報を更新する
+function updateWorldInfo(){
+  var request = new XMLHttpRequest();
+  request.open('GET', `${SERVER_ADDR}/api/worldInfo`, true);
+  request.responseType = 'json';
+  request.onload = function () {
+    let data = this.response;
+    // データが来ないワールド情報を消す
+    let worldIdList = [];
+    let locationIdList = [];
+    for(let world in data){
+      worldIdList.push(CybozuLabs.MD5.calc(world, CybozuLabs.MD5.BY_UTF16));
+      for(let location in data[world]["locations"]){
+        locationIdList.push(CybozuLabs.MD5.calc(location, CybozuLabs.MD5.BY_UTF16));
+      }        
+    }
+    // ワールドを消す
+    $('.mmob-worldinfo-world').each(function (index, element) {
+      let tmp = $(element).attr('id').split("-");
+      let showedWorldId = tmp[tmp.length - 1];
+      if (!worldIdList.includes(showedWorldId)) {
+        $(`#mmob-worldid-${showedWorldId}`).remove();
+        $(`#mmob-worldid-${showedWorldId}-locations`).remove();
+      }
+    });
+    // ロケーションを消す
+    $('.mmob-worldinfo-location').each(function (index, element) {
+      let tmp = $(element).attr('id').split("-");
+      let showedLocationId = tmp[tmp.length - 1];
+      if (!locationIdList.includes(showedLocationId)) {
+        $(`#mmob-locationid-${showedLocationId}`).remove();
+      }
+    });
+    // ワールド情報の更新
+    for(let world in data){
+      let worldId = CybozuLabs.MD5.calc(world, CybozuLabs.MD5.BY_UTF16);
+      if($(`#mmob-worldid-${worldId}`).length){
+        // 既にあるワールドの場合
+        $(`#mmob-worldid-${worldId}-connections`).text(data[world]["connections"]);
+        for(let location in data[world]["locations"]){
+          let locationId = CybozuLabs.MD5.calc(location, CybozuLabs.MD5.BY_UTF16);
+          if($(`#mmob-locationid-${locationId}`).length){
+            // 既にあるロケーションの場合は更新
+            $(`#mmob-locationid-${locationId}-connections`).text(escapeHTML(data[world]["locations"][location]["connections"]));
+          }else{
+            // 新しいロケーションの場合は追加
+            let locationStr = `
+              <tr id="mmob-locationid-${locationId}" class="mmob-worldinfo-location">
+                <td class="text-center" style="width: 30px;">\u2022</td>
+                <td>
+                <a href="${escapeHTML(location)}">${escapeHTML(data[world]["locations"][location]["title"])}</a>
+                </td>
+                <td id="mmob-locationid-${locationId}-connections" class="text-center" style="width: 60px;">${escapeHTML(data[world]["locations"][location]["connections"])}</td>
+              </tr>
+            `;
+            $(`#mmob-worldid-${worldId}-locations-tbody`).append(locationStr); 
+          }
+        }
+      }else{
+        // 新しいワールドの場合
+        // 新しいワールドに関する情報を追加
+        let worldStr=`
+          <tr id="mmob-worldid-${worldId}" class="mmob-worldinfo-world" data-toggle="collapse" data-target="#mmob-worldcollapse-${worldId}">
+          <td class="text-center">\u2795</td>
+          <td>${escapeHTML(world)}</td>
+          <td id="mmob-worldid-${worldId}-connections" class="text-center">${escapeHTML(data[world]["connections"])}</td>
+          </tr>`;
+        
+        // 新しいロケーションに関する情報を追加
+        let locationStr = `
+          <tr id="mmob-worldid-${worldId}-locations">
+            <td class="p-0"></td>
+            <td colspan="2" class="p-0">
+            <div id="mmob-worldcollapse-${worldId}" class="collapse">
+            <table class="table thead-dark">
+            <tbody id="mmob-worldid-${worldId}-locations-tbody">`;
+        for(let location in data[world]["locations"]){
+            let locationId = CybozuLabs.MD5.calc(location, CybozuLabs.MD5.BY_UTF16);
+            locationStr += `
+            <tr id="mmob-locationid-${locationId}" class="mmob-worldinfo-location">
+              <td class="text-center" style="width: 30px;">\u2022</td>
+              <td>
+              <a href="${escapeHTML(location)}">${escapeHTML(data[world]["locations"][location]["title"])}</a>
+              </td>
+              <td id="mmob-locationid-${locationId}-connections" class="text-center" style="width: 60px;">${escapeHTML(data[world]["locations"][location]["connections"])}</td>
+            </tr>
+            `;  
+        }
+        locationStr += `
+            </tbody>
+            </table>
+            </div>
+            </td>
+          </tr>`;
+        $("#mmob-worldinfo-table").append(worldStr+locationStr);
+      }
+    }
+  };
+  request.send();
+  console.log("updateWorldInfo");
+}
+
 // ウィンドウの初期状態ロード
 function loadInitialStateOfWindow(){
   chrome.storage.sync.get(['isConnected', 'isChatWindowShown', 'isChatWindowMinimized', 'chatWindowPos', 'chatWindowSize', 'isWorldInfoWindowShown', 'isWorldInfoWindowMinimized', 'worldInfoWindowPos', 'worldInfoWindowSize'], function (data) {
@@ -593,7 +597,11 @@ function escapeHTML(string){
 // 定期的な間隔[ms]で関数を実行。関数の実行時間が指定した間隔を超える場合は関数終了後に即実行
 function executePeriodically(fn, interval){
   const startTime = performance.now(); // 開始時間
-  fn();
+  chrome.storage.sync.get(['isConnected'], function (data) {
+    if(data.isConnected){
+      fn();
+    }
+  });
   const endTime = performance.now(); // 終了時間
   let delay = interval - (endTime - startTime);
   delay = delay > 0 ? Math.round(delay):0;

@@ -1,7 +1,5 @@
-// const URL = "http://3.19.79.227:3000";
-// const SERVER_ADDR = "http://3.19.79.227:3001";
 const SERVER_ADDR = "https://mmobrowser.tk";
-// const URL = "http://localhost:3000";
+// const SERVER_ADDR = "http://localhost";
 const socket = io(SERVER_ADDR, { autoConnect: false, transports: ['websocket', 'polling', 'flashsocket'] });
 var username = "";
 var cursorColor = "#FFFFFF";
@@ -27,6 +25,14 @@ chrome.runtime.onMessage.addListener(
       socket.auth = { username };
       socket.connect();
       chrome.storage.sync.set({ isConnected: true });
+      chrome.tabs.query({}, tabs => {
+        for (let i = 0; i < tabs.length; i++) {
+          chrome.tabs.sendMessage(
+            tabs[i].id,
+            { "type": "login" },
+          );
+        }
+      });
       console.log("login!");
       sendResponse({});
     } else if (request.type == "logout") {

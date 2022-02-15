@@ -1,6 +1,6 @@
 const SERVER_ADDR = "https://mmobrowser.tk";
 const USERNAME_MAXLENGTH = 16;
-
+const UPDATE_CONNECTIONSINFO = 60000
 chrome.storage.sync.get('isConnected', function (data) {
     if (typeof data.isConnected === 'undefined') {
         console.log("isConnected undefined");
@@ -33,7 +33,7 @@ function viewLoginWindow() {
         </div>
     <button type="button" id="loginButton" class="btn btn-primary w-75" disabled>ログイン</button>
     </form>
-    <p>現在の接続者数：<span class="mmob-connections">ロード中...</span></p>
+    <p>現在の接続者数：<span class="mmob-connections">ロード中...</span> 名（1分毎に更新）</p>
     `);
 
     getConnections();
@@ -152,4 +152,4 @@ function getConnections(){
     request.send();
 }
 
-setInterval(getConnections,5000);
+setInterval(getConnections, UPDATE_CONNECTIONSINFO);
