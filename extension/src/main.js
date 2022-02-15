@@ -1,7 +1,7 @@
 // const SERVER_ADDR = "http://3.19.79.227:3001";
 const SERVER_ADDR = "https://mmobrowser.tk";
 const MESSAGE_MAX_LENGTH = 100;
-const UPDATE_WORLDINFO_INTERVAL = 5000;
+const UPDATE_WORLDINFO_INTERVAL = 60000;
 const SEND_USERINFO_INTERVAL = 16;
 var mouseX = 0;
 var mouseY = 0;
@@ -345,7 +345,7 @@ function createMMOBWorldInfoWindow() {
   const appearance = jsFrame.createFrameAppearance();
   const worldInfoWindow = jsFrame.create({
     title: 'mmobworldinfo-window',
-    title: 'MMOB ワールド情報(5秒毎に更新)',
+    title: 'MMOB ワールド情報(1分毎に更新)',
     left: 350, top: 20, width: 320, height: 220,
     style: {
       backgroundColor: 'rgba(255,255,255,0.9)',
